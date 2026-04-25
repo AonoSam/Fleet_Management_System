@@ -1,0 +1,116 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Management System</title>
+
+    <!-- <link rel="stylesheet" href="{% static 'css/style.css' %}"> -->
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .navbar a {
+            color: white;
+            margin-left: 10px;
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 220px;
+            background: #ecf0f1;
+            padding: 15px;
+            min-height: 100vh;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            margin: 10px 0;
+        }
+
+        /* Main content */
+        .content {
+            flex: 1;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <div>
+        <strong>Fleet System</strong>
+    </div>
+
+    <div>
+        {% if request.user.is_authenticated %}
+            {{ request.user.username }} |
+            <a href="logout/">Logout</a>
+        {% else %}
+            <a href="login/">Login</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- SIDEBAR -->
+    {% if request.user.is_authenticated %}
+    <div class="sidebar">
+        <h3>Menu</h3>
+
+        <ul>
+            <li><a href="dashboard/">Dashboard</a></li>
+
+            {% if request.user.role == 'admin' %}
+                <li><a href="/vehicles/">Vehicles</a></li>
+                <li><a href="#">Drivers</a></li>
+                <li><a href="#">Payments</a></li>
+                <li><a href="#">Maintenance</a></li>
+                <li><a href="#">Reports</a></li>
+                <li><a href="#">Loans</a></li>
+            {% endif %}
+
+            {% if request.user.role == 'driver' %}
+                <li><a href="#">My Payments</a></li>
+                <li><a href="#">Maintenance</a></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- MAIN CONTENT -->
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+</div>
+<!-- 
+<script src="{% static 'js/main.js' %}"></script> -->
+
+</body>
+</html>

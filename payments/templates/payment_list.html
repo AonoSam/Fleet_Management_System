@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Payments</h2>
+
+<a href="{% url 'payment_create' %}">Add Payment</a>
+
+<table border="1">
+    <tr>
+        <th>Driver</th>
+        <th>Amount</th>
+        <th>Method</th>
+        <th>Date</th>
+    </tr>
+
+    {% for p in payments %}
+    <tr>
+        <td>{{ p.driver }}</td>
+        <td>{{ p.amount }}</td>
+        <td>{{ p.payment_method }}</td>
+        <td>{{ p.payment_date }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

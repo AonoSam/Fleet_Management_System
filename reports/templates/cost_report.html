@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Maintenance Cost Report</h2>
+
+<table border="1">
+    <tr>
+        <th>Vehicle</th>
+        <th>Issue</th>
+        <th>Cost</th>
+        <th>Date</th>
+    </tr>
+
+    {% for r in repairs %}
+    <tr>
+        <td>{{ r.vehicle }}</td>
+        <td>{{ r.issue }}</td>
+        <td>{{ r.cost }}</td>
+        <td>{{ r.repair_date }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

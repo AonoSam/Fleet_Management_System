@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Add Payment</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <select name="driver">
+        {% for d in drivers %}
+            <option value="{{ d.id }}">{{ d }}</option>
+        {% endfor %}
+    </select>
+
+    <input type="number" name="amount" placeholder="Amount">
+
+    <select name="payment_method">
+        <option value="cash">Cash</option>
+        <option value="mpesa">Mpesa</option>
+    </select>
+
+    <input type="text" name="transaction_code" placeholder="Transaction Code">
+
+    <button type="submit">Save</button>
+</form>
+
+{% endblock %}

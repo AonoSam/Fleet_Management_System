@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Create Driver</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <input type="text" name="username" placeholder="Username" required><br><br>
+
+    <input type="password" name="password" placeholder="Password" required><br><br>
+
+    <input type="text" name="license_number" placeholder="License Number" required><br><br>
+
+    <input type="text" name="phone" placeholder="Phone" required><br><br>
+
+    <select name="vehicle">
+        <option value="">Assign Vehicle (optional)</option>
+        {% for v in vehicles %}
+            <option value="{{ v.id }}">{{ v.number_plate }} - {{ v.model }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <button type="submit">Save Driver</button>
+</form>
+
+{% endblock %}

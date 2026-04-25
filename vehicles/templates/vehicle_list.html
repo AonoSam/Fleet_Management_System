@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Vehicles</h2>
+
+<a href="{% url 'vehicle_create' %}">+ Add Vehicle</a>
+
+<hr>
+
+<ul>
+    {% for vehicle in vehicles %}
+        <li>
+            <a href="{% url 'vehicle_detail' vehicle.id %}">
+                {{ vehicle.number_plate }} - {{ vehicle.model }} ({{ vehicle.status }})
+            </a>
+        </li>
+    {% empty %}
+        <p>No vehicles found.</p>
+    {% endfor %}
+</ul>
+
+{% endblock %}

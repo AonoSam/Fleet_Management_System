@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Driver Performance Report</h2>
+
+<table border="1">
+    <tr>
+        <th>Driver</th>
+        <th>Vehicle</th>
+        <th>Performance Score</th>
+    </tr>
+
+    {% for d in drivers %}
+    <tr>
+        <td>{{ d.user.username }}</td>
+        <td>{{ d.vehicle }}</td>
+        <td>{{ d.performance_score }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

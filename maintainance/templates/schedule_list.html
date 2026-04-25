@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Maintenance Schedules</h2>
+
+<a href="{% url 'schedule_create' %}">Create Schedule</a>
+
+<table border="1">
+    <tr>
+        <th>Vehicle</th>
+        <th>Service</th>
+        <th>Due Date</th>
+        <th>Status</th>
+    </tr>
+
+    {% for s in schedules %}
+    <tr>
+        <td>{{ s.vehicle }}</td>
+        <td>{{ s.service_type }}</td>
+        <td>{{ s.due_date }}</td>
+        <td>{{ s.is_completed }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
