@@ -1,36 +1,17 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
-from .forms import RegisterForm
+from django.contrib import messages
+from .models import User
 
 
-# =========================
-# REGISTER VIEW (FIXED)
-# =========================
-def register_view(request):
-    form = RegisterForm()
-
-    if request.method == "POST":
-        form = RegisterForm(request.POST)
-
-        if form.is_valid():
-            user = form.save()
-
-            login(request, user)
-
-            return redirect('login')
-        else:
-            # 🔥 DEBUG: show errors in terminal
-            print("REGISTER ERRORS:", form.errors)
-
-    return render(request, 'register.html', {'form': form})
-
-
-# =========================
-# LOGIN VIEW (FIXED)
-# =========================
+# =====================
+# LOGIN
+# =====================
 def login_view(request):
-    error = None
+
+    if request.user.is_authenticated:
+        return redirect_user(request.user)
 
     if request.method == "POST":
         username = request.POST.get('username')
@@ -40,35 +21,36 @@ def login_view(request):
 
         if user:
             login(request, user)
-            return redirect('profile')
-        else:
-            error = "Invalid username or password"
+            return redirect_user(user)
 
-    return render(request, 'login.html', {'error': error})
+        messages.error(request, "Invalid username or password")
+
+    return render(request, 'login.html')
 
 
-# =========================
-# LOGOUT VIEW
-# =========================
+# =====================
+# REDIRECT LOGIC
+# =====================
+def redirect_user(user):
+    if user.role == 'admin':
+        return redirect('dashboard')
+    return redirect('profile')
+
+
+# =====================
+# LOGOUT
+# =====================
+@login_required
 def logout_view(request):
     logout(request)
     return redirect('login')
 
 
-# =========================
-# PROFILE VIEW
-# =========================
+# =====================
+# PROFILE
+# =====================
 @login_required
-def profile_view(request):
-    return render(request, 'profile.html')
-
-
-# =========================
-# DASHBOARD (ROLE BASED)
-# =========================
-@login_required
-def dashboard(request):
-    if request.user.role == 'admin':
-        return render(request, 'profile.html', {'role': 'admin'})
-    else:
-        return render(request, 'profile.html', {'role': 'driver'})
+def profile(request):
+    return render(request, 'profile.html', {
+        'user': request.user
+    })

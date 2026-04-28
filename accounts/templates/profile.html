@@ -1,30 +1,30 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Welcome, {{ request.user.username }}</h2>
 
-<p>Email: {{ request.user.email }}</p>
-<p>Phone: {{ request.user.phone }}</p>
-<p>Role: {{ request.user.role }}</p>
+<h2>Welcome, {{ user.username }}</h2>
+
+<p>Role: {{ user.role }}</p>
 
 <hr>
 
-{% if role == 'admin' %}
+{% if user.role == 'admin' %}
+
     <h3>Admin Panel</h3>
-    <ul>
-        <!-- <li><a href="{% url 'vehicles' %}">Manage Vehicles</a></li> -->
-        <li><a href="#">Drivers</a></li>
-        <li><a href="#">Reports</a></li>
-    </ul>
+    <a href="/vehicles/">Manage Vehicles</a><br>
+    <a href="/drivers/">Manage Drivers</a><br>
+    <a href="/loans/">Manage Loans</a><br>
+
 {% else %}
+
     <h3>Driver Panel</h3>
-    <ul>
-        <li><a href="{% url 'payment_create' %}">Send Payments</a></li>
-        <li><a href="#">View Maintenance</a></li>
-    </ul>
+    <a href="/loans/">My Loans</a><br>
+    <a href="/maintenance/">My Maintenance</a><br>
+    
+
 {% endif %}
 
-<br>
+<br><br>
 <a href="{% url 'logout' %}">Logout</a>
 
 {% endblock %}
