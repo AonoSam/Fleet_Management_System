@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
 <h2>Vehicle Details</h2>
@@ -7,7 +7,7 @@
 <p><strong>Model:</strong> {{ vehicle.model }}</p>
 <p><strong>Year:</strong> {{ vehicle.year }}</p>
 <p><strong>Status:</strong> {{ vehicle.status }}</p>
+<p><strong>Driver:</strong> {{ vehicle.assigned_driver }}</p>
 
-<a href="{% url 'vehicle_list' %}">Back</a>
-
+<a href="{% url 'vehicle_list' %}" class="btn btn-secondary">Back</a>
 {% endblock %}

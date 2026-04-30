@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Complete Maintenance</h2>
+
+<p><strong>Vehicle:</strong> {{ schedule.vehicle }}</p>
+<p><strong>Description:</strong> {{ schedule.description }}</p>
+<p><strong>Date:</strong> {{ schedule.service_date }}</p>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <input type="number" step="0.01" name="cost"
+           class="form-control mb-3"
+           placeholder="Enter repair cost" required>
+
+    <button class="btn btn-success">Confirm Completion</button>
+    <a href="{% url 'schedule_list' %}" class="btn btn-secondary">Back</a>
+</form>
+
+{% endblock %}

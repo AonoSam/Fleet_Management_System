@@ -1,23 +1,65 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
 <h2>Drivers</h2>
 
-<a href="{% url 'driver_create' %}">+ Add Driver</a>
+<a href="{% url 'driver_create' %}" class="btn btn-primary mb-3">Add Driver</a>
 
-<hr>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>License</th>
+            <th>Phone</th>
+            <th>Vehicle</th>
+            <th>Performance</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
 
-<ul>
-    {% for driver in drivers %}
-        <li>
-            {{ driver.user.username }} |
-            {{ driver.phone }} |
-            Vehicle: {{ driver.vehicle }}
-            <a href="{% url 'driver_performance' driver.id %}">Performance</a>
-        </li>
-    {% empty %}
-        <p>No drivers found.</p>
-    {% endfor %}
-</ul>
+    <tbody>
+        {% for d in drivers %}
+        <tr>
+            <td>{{ d.user.username }}</td>
+            <td>{{ d.license_number }}</td>
+            <td>{{ d.phone }}</td>
 
+            <td>
+                {% if d.assigned_vehicle %}
+                    {{ d.assigned_vehicle.number_plate }} - {{ d.assigned_vehicle.model }}
+                {% else %}
+                    Not Assigned
+                {% endif %}
+            </td>
+
+            <!-- 🔥 UPDATED PERFORMANCE DISPLAY -->
+            <td>
+                <strong>{{ d.performance_score }}</strong><br>
+                <small class="text-muted">
+                    KSh {{ d.total_collections }}
+                </small>
+            </td>
+
+            <td>
+                <!-- EDIT -->
+                <a href="{% url 'driver_update' d.id %}" class="btn btn-warning btn-sm">
+                    Edit
+                </a>
+
+                <!-- PERFORMANCE -->
+                <a href="{% url 'driver_performance' d.id %}" class="btn btn-info btn-sm">
+                    Performance
+                </a>
+
+                <!-- DELETE -->
+                <a href="{% url 'driver_delete' d.id %}" 
+                   class="btn btn-danger btn-sm"
+                   onclick="return confirm('Are you sure you want to delete this driver?')">
+                    Delete
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}

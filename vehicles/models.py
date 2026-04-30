@@ -1,19 +1,27 @@
 from django.db import models
+from accounts.models import User
+
 
 class Vehicle(models.Model):
-
     STATUS_CHOICES = (
-        ('active', 'Active'),
-        ('maintenance', 'Under Maintenance'),
-        ('inactive', 'Inactive'),
+        ('ACTIVE', 'Active'),
+        ('MAINTENANCE', 'Under Maintenance'),
+        ('INACTIVE', 'Inactive'),
     )
 
     number_plate = models.CharField(max_length=20, unique=True)
     model = models.CharField(max_length=100)
-    year = models.IntegerField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    year = models.PositiveIntegerField()
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
+
+    assigned_driver = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={'role': 'DRIVER'}
+    )
 
     def __str__(self):
-        return self.number_plate
+        return f"{self.number_plate} - {self.model}"

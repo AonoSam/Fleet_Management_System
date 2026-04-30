@@ -1,27 +1,21 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Add Payment</h2>
+<h2>Send Daily Collection</h2>
 
 <form method="POST">
     {% csrf_token %}
 
-    <select name="driver">
-        {% for d in drivers %}
-            <option value="{{ d.id }}">{{ d }}</option>
-        {% endfor %}
-    </select>
+    <input type="text" name="reference" placeholder="Reference"
+           class="form-control mb-2" required>
 
-    <input type="number" name="amount" placeholder="Amount">
+    <input type="number" name="amount" placeholder="Amount"
+           class="form-control mb-2" required>
 
-    <select name="payment_method">
-        <option value="cash">Cash</option>
-        <option value="mpesa">Mpesa</option>
-    </select>
+    <input type="text" name="phone_number" placeholder="Phone Number"
+           class="form-control mb-2" required>
 
-    <input type="text" name="transaction_code" placeholder="Transaction Code">
-
-    <button type="submit">Save</button>
+    <button class="btn btn-success">Send Payment</button>
 </form>
 
 {% endblock %}

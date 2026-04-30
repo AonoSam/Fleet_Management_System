@@ -3,24 +3,61 @@
 {% block content %}
 <h2>Payments</h2>
 
-<a href="{% url 'payment_create' %}">Add Payment</a>
+{% if request.user.role == 'DRIVER' %}
+<a href="{% url 'payment_form' %}" class="btn btn-primary mb-3">
+    Send Payment
+</a>
+{% endif %}
 
-<table border="1">
-    <tr>
-        <th>Driver</th>
-        <th>Amount</th>
-        <th>Method</th>
-        <th>Date</th>
-    </tr>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Driver</th>
+            <th>Vehicle</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Reference</th>
 
-    {% for p in payments %}
-    <tr>
-        <td>{{ p.driver }}</td>
-        <td>{{ p.amount }}</td>
-        <td>{{ p.payment_method }}</td>
-        <td>{{ p.payment_date }}</td>
-    </tr>
-    {% endfor %}
+            {% if request.user.role == 'ADMIN' %}
+            <th>Actions</th>
+            {% endif %}
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for p in payments %}
+        <tr>
+            <td>{{ p.driver.username }}</td>
+            <td>{{ p.vehicle }}</td>
+            <td>{{ p.amount }}</td>
+
+            <!-- 🔥 STATUS UI -->
+            <td>
+                {% if p.status == 'PENDING' %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                {% elif p.status == 'SUCCESS' %}
+                    <span class="badge bg-success">Verified</span>
+                {% else %}
+                    <span class="badge bg-danger">Failed</span>
+                {% endif %}
+            </td>
+
+            <td>{{ p.reference }}</td>
+
+            <!-- 🔥 ADMIN ACTION -->
+            {% if request.user.role == 'ADMIN' %}
+            <td>
+                {% if p.status == 'PENDING' %}
+                    <a href="{% url 'verify_payment' p.id %}" class="btn btn-success btn-sm">
+                        Verify
+                    </a>
+                {% else %}
+                    <span class="text-muted">No Action</span>
+                {% endif %}
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
-
 {% endblock %}

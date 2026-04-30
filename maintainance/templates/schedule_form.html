@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Create Maintenance Schedule</h2>
+<h2>Add Maintenance Schedule</h2>
 
 <form method="POST">
     {% csrf_token %}
 
-    <select name="vehicle">
+    <select name="vehicle" class="form-control mb-2" required>
+        <option value="">-- Select Vehicle --</option>
         {% for v in vehicles %}
             <option value="{{ v.id }}">{{ v }}</option>
         {% endfor %}
     </select>
 
-    <input type="text" name="service_type" placeholder="Service Type">
-    <input type="text" name="description" placeholder="Description">
-    <input type="date" name="due_date">
+    <input type="date" name="service_date" class="form-control mb-2" required>
 
-    <button type="submit">Save</button>
+    <textarea name="description" class="form-control mb-2" placeholder="Description"></textarea>
+
+    <button class="btn btn-success">Save</button>
 </form>
-
 {% endblock %}

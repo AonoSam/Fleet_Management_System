@@ -2,7 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('payment_list/', views.payment_list, name='payment_list'),
-    path('create/', views.payment_create, name='payment_create'),
-    path('mpesa-status/', views.mpesa_status, name='mpesa_status'),
+    path('', views.payment_list, name='payment_list'),
+    path('create/', views.payment_form, name='payment_form'),
+    path('admin/', views.admin_payment_list, name='admin_payment_list'),
+
+    # 🔥 NEW VERIFY ROUTE
+    path('<int:pk>/verify/', views.verify_payment, name='verify_payment'),
 ]

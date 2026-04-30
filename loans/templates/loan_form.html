@@ -2,41 +2,59 @@
 
 {% block content %}
 
-<h2>Create Loan</h2>
+<h2>Issue Loan</h2>
 
-<form method="POST">
-    {% csrf_token %}
+<div class="card p-4">
 
-    <!-- DRIVER SELECTION -->
-    <label>Driver</label>
-    <select name="driver" required>
-        <option value="">-- Select Driver --</option>
-        {% for d in drivers %}
-            <option value="{{ d.id }}">
-                {{ d }}
-            </option>
-        {% endfor %}
-    </select>
+    <form method="POST">
+        {% csrf_token %}
 
-    <br><br>
+        <!-- DRIVER -->
+        <div class="mb-3">
+            <label class="form-label">Select Driver</label>
+            <select name="driver" class="form-control" required>
+                <option value="">-- Choose Driver --</option>
+                {% for d in drivers %}
+                    <option value="{{ d.id }}">{{ d.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <!-- AMOUNT -->
-    <label>Amount</label>
-    <input type="number" name="amount" step="0.01" required>
+        <!-- AMOUNT -->
+        <div class="mb-3">
+            <label class="form-label">Loan Amount</label>
+            <input type="number" step="0.01" name="amount" class="form-control" required>
+        </div>
 
-    <br><br>
+        <!-- PURPOSE -->
+        <div class="mb-3">
+            <label class="form-label">Purpose</label>
+            <input type="text" name="purpose" class="form-control" placeholder="e.g Fuel, Repair, Emergency" required>
+        </div>
 
-    <!-- REASON -->
-    <label>Reason</label>
-    <textarea name="reason" rows="4" required></textarea>
+        <!-- INTEREST -->
+        <div class="mb-3">
+            <label class="form-label">Interest Rate (%)</label>
+            <input type="number" step="0.01" name="interest_rate" class="form-control" value="0">
+        </div>
 
-    <br><br>
+        <!-- DUE DATE -->
+        <div class="mb-3">
+            <label class="form-label">Due Date</label>
+            <input type="date" name="due_date" class="form-control">
+        </div>
 
-    <!-- SUBMIT -->
-    <button type="submit">Submit Loan</button>
+        <!-- BUTTONS -->
+        <button type="submit" class="btn btn-success">
+            Issue Loan
+        </button>
 
-    <a href="{% url 'loan_list' %}">Cancel</a>
+        <a href="{% url 'loan_list' %}" class="btn btn-secondary">
+            Cancel
+        </a>
 
-</form>
+    </form>
+
+</div>
 
 {% endblock %}

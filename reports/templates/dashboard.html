@@ -1,13 +1,37 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Fleet Dashboard</h2>
+<h2>Reports Dashboard</h2>
 
-<div>
-    <p>Total Vehicles: {{ total_vehicles }}</p>
-    <p>Total Drivers: {{ total_drivers }}</p>
-    <p>Total Payments: {{ total_payments }}</p>
-    <p>Total Maintenance Cost: {{ total_maintenance_cost }}</p>
+<div class="row">
+
+    <div class="col-md-3">
+        <div class="card p-3">
+            <h5>Total Income</h5>
+            <h3>KSh {{ total_income }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-3">
+            <h5>Total Expenses</h5>
+            <h3>KSh {{ total_expenses }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-3">
+            <h5>Net Profit</h5>
+            <h3>KSh {{ net_profit }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card p-3">
+            <h5>Total Drivers</h5>
+            <h3>{{ total_drivers }}</h3>
+        </div>
+    </div>
+
 </div>
-
 {% endblock %}

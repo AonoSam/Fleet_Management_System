@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{% if vehicle %}Edit{% else %}Add{% endif %} Vehicle</h2>
+
+<form method="POST">
+    {% csrf_token %}
+
+    <input type="text" name="number_plate" placeholder="Number Plate" class="form-control mb-2"
+           value="{{ vehicle.number_plate|default:'' }}" required>
+
+    <input type="text" name="model" placeholder="Model" class="form-control mb-2"
+           value="{{ vehicle.model|default:'' }}" required>
+
+    <input type="number" name="year" placeholder="Year" class="form-control mb-2"
+           value="{{ vehicle.year|default:'' }}" required>
+
+    <select name="status" class="form-control mb-2">
+        <option value="ACTIVE">Active</option>
+        <option value="MAINTENANCE">Maintenance</option>
+        <option value="INACTIVE">Inactive</option>
+    </select>
+
+    <select name="assigned_driver" class="form-control mb-2">
+        <option value="">-- Assign Driver --</option>
+        {% for d in drivers %}
+            <option value="{{ d.id }}"
+                {% if vehicle.assigned_driver.id == d.id %}selected{% endif %}>
+                {{ d.username }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-success">Save</button>
+</form>
+{% endblock %}

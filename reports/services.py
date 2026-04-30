@@ -1,43 +1,48 @@
-from vehicles.models import Vehicle
-from drivers.models import Driver
-from maintainance.models import MaintenanceSchedule, RepairLog
 from payments.models import Payment
+from drivers.models import Driver
+from maintainance.models import RepairLog
 from django.db.models import Sum
 
 
-# =====================
-# DASHBOARD STATS
-# =====================
-def get_dashboard_data():
+def get_dashboard_stats():
+    total_payments = Payment.objects.filter(status='SUCCESS').aggregate(
+        total=Sum('amount')
+    )['total'] or 0
 
-    total_vehicles = Vehicle.objects.count()
-    total_drivers = Driver.objects.count()
-
-    total_payments = Payment.objects.aggregate(total=Sum('amount'))['total'] or 0
-
-    total_maintenance_cost = RepairLog.objects.aggregate(
+    total_repairs = RepairLog.objects.aggregate(
         total=Sum('cost')
     )['total'] or 0
 
+    total_drivers = Driver.objects.count()
+
     return {
-        "total_vehicles": total_vehicles,
+        "total_income": total_payments,
+        "total_expenses": total_repairs,
+        "net_profit": total_payments - total_repairs,
         "total_drivers": total_drivers,
-        "total_payments": total_payments,
-        "total_maintenance_cost": total_maintenance_cost,
     }
 
 
-# =====================
-# COST REPORT
-# =====================
 def get_cost_report():
-    repairs = RepairLog.objects.all().order_by('-repair_date')
-    return repairs
+    return RepairLog.objects.select_related('vehicle').all()
 
 
-# =====================
-# PERFORMANCE REPORT
-# =====================
-def get_driver_performance():
-    drivers = Driver.objects.all().order_by('-performance_score')
-    return drivers
+def get_driver_performance_report():
+    drivers = Driver.objects.all()
+
+    report = []
+
+    for d in drivers:
+        payments = Payment.objects.filter(driver=d.user, status='SUCCESS')
+
+        total = payments.aggregate(total=Sum('amount'))['total'] or 0
+        trips = payments.count()
+
+        report.append({
+            "driver": d,
+            "total_collections": total,
+            "trips": trips,
+            "score": trips,
+        })
+
+    return report

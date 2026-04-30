@@ -3,24 +3,27 @@
 {% block content %}
 <h2>Repair Logs</h2>
 
-<a href="{% url 'repair_create' %}">Add Repair</a>
+<a href="{% url 'add_repair' %}" class="btn btn-primary mb-3">Add Repair</a>
 
-<table border="1">
-    <tr>
-        <th>Vehicle</th>
-        <th>Issue</th>
-        <th>Cost</th>
-        <th>Date</th>
-    </tr>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Vehicle</th>
+            <th>Issue</th>
+            <th>Cost</th>
+            <th>Date</th>
+        </tr>
+    </thead>
 
-    {% for r in repairs %}
-    <tr>
-        <td>{{ r.vehicle }}</td>
-        <td>{{ r.issue }}</td>
-        <td>{{ r.cost }}</td>
-        <td>{{ r.repair_date }}</td>
-    </tr>
-    {% endfor %}
+    <tbody>
+        {% for r in repairs %}
+        <tr>
+            <td>{{ r.vehicle }}</td>
+            <td>{{ r.issue }}</td>
+            <td>{{ r.cost }}</td>
+            <td>{{ r.repaired_on }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
-
 {% endblock %}

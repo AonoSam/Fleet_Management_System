@@ -4,6 +4,6 @@ from .models import Payment
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('driver', 'amount', 'payment_method', 'payment_date')
-    list_filter = ('payment_method', 'payment_date')
-    search_fields = ('driver__user__username',)
+    list_display = ('driver', 'vehicle', 'amount', 'status', 'created_at')
+    list_filter = ('status',)
+    search_fields = ('driver__username', 'reference')

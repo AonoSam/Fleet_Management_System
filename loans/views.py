@@ -1,60 +1,53 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from drivers.models import Driver
+from django.shortcuts import render, redirect
+from accounts.permissions import admin_required, driver_required
+from .services import get_all_loans, get_driver_loans, get_loan, update_loan_status
+from accounts.models import User
 from .models import Loan
-from .services import get_loans, create_loan, get_loan, add_repayment
 
 
-# =====================
-# LOAN LIST
-# =====================
+# -----------------------
+# ADMIN: LOAN LIST
+# -----------------------
+@admin_required
 def loan_list(request):
-    loans = get_loans()
-
-    return render(request, 'loan_list.html', {
-        'loans': loans
-    })
+    loans = get_all_loans()
+    return render(request, 'loan_list.html', {'loans': loans})
 
 
-# =====================
-# CREATE LOAN
-# =====================
-def loan_create(request):
+# -----------------------
+# ADMIN: CREATE LOAN
+# -----------------------
+@admin_required
+def create_loan(request):
+    drivers = User.objects.filter(role='DRIVER')
 
-    drivers = Driver.objects.all()
-
-    if request.method == "POST":
-
-        driver = get_object_or_404(Driver, id=request.POST.get('driver'))
-
-        data = {
-            "driver": driver,
-            "amount": request.POST.get('amount'),
-            "reason": request.POST.get('reason')
-        }
-
-        create_loan(data)
+    if request.method == 'POST':
+        Loan.objects.create(
+            driver_id=request.POST.get('driver'),
+            amount=request.POST.get('amount'),
+            purpose=request.POST.get('purpose'),
+            interest_rate=request.POST.get('interest_rate'),
+            due_date=request.POST.get('due_date'),
+            status='ACTIVE'
+        )
         return redirect('loan_list')
 
-    # ✅ FIX: MUST LOAD A FORM TEMPLATE, NOT loan_list.html
-    return render(request, 'loan_form.html', {
-        'drivers': drivers
-    })
+    return render(request, 'loan_form.html', {'drivers': drivers})
 
 
-# =====================
-# LOAN DETAIL + REPAYMENT
-# =====================
+# -----------------------
+# ADMIN: LOAN DETAIL
+# -----------------------
+@admin_required
 def loan_detail(request, pk):
-
     loan = get_loan(pk)
+    return render(request, 'loan_detail.html', {'loan': loan})
 
-    if request.method == "POST":
 
-        amount = request.POST.get('amount_paid')
-        add_repayment(loan, amount)
-
-        return redirect('loan_detail', pk=pk)
-
-    return render(request, 'loan_detail.html', {
-        'loan': loan
-    })
+# -----------------------
+# DRIVER: MY LOANS
+# -----------------------
+@driver_required
+def my_loans(request):
+    loans = get_driver_loans(request.user)
+    return render(request, 'loan_list.html', {'loans': loans})

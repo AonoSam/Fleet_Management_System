@@ -1,27 +1,19 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <h2>Loan Details</h2>
 
-<p>Driver: {{ loan.driver }}</p>
-<p>Amount: {{ loan.amount }}</p>
-<p>Reason: {{ loan.reason }}</p>
-<p>Status: {{ loan.is_paid }}</p>
+<div class="card p-3">
 
-<h3>Repay Loan</h3>
+    <p><strong>Driver:</strong> {{ loan.driver.username }}</p>
+    <p><strong>Amount:</strong> KSh {{ loan.amount }}</p>
+    <p><strong>Purpose:</strong> {{ loan.purpose }}</p>
+    <p><strong>Interest Rate:</strong> {{ loan.interest_rate }}%</p>
+    <p><strong>Status:</strong> {{ loan.status }}</p>
+    <p><strong>Due Date:</strong> {{ loan.due_date }}</p>
+    <p><strong>Issued:</strong> {{ loan.issued_date }}</p>
 
-<form method="POST">
-    {% csrf_token %}
-    <input type="number" name="amount_paid" placeholder="Amount Paid">
-    <button type="submit">Submit</button>
-</form>
-
-<h3>Repayment History</h3>
-
-<ul>
-    {% for r in loan.repayments.all %}
-        <li>{{ r.amount_paid }} - {{ r.payment_date }}</li>
-    {% endfor %}
-</ul>
+</div>
 
 {% endblock %}

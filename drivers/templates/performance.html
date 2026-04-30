@@ -1,14 +1,13 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
 <h2>Driver Performance</h2>
 
-<p><strong>Name:</strong> {{ driver.user.username }}</p>
-<p><strong>Phone:</strong> {{ driver.phone }}</p>
-<p><strong>License:</strong> {{ driver.license_number }}</p>
-<p><strong>Vehicle:</strong> {{ driver.vehicle }}</p>
-<p><strong>Score:</strong> {{ driver.performance_score }}</p>
+<p><strong>Driver:</strong> {{ driver.user.username }}</p>
 
-<a href="{% url 'driver_list' %}">Back</a>
+<p><strong>Performance Score:</strong> {{ performance_score }}</p>
+<p><strong>Total Trips:</strong> {{ total_trips }}</p>
+<p><strong>Total Collections:</strong> {{ total_collections }}</p>
 
+<a href="{% url 'driver_list' %}" class="btn btn-secondary">Back</a>
 {% endblock %}

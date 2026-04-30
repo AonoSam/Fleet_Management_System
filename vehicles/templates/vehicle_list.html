@@ -1,22 +1,36 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
 <h2>Vehicles</h2>
 
-<a href="{% url 'vehicle_create' %}">+ Add Vehicle</a>
+<a href="{% url 'vehicle_create' %}" class="btn btn-primary mb-3">Add Vehicle</a>
 
-<hr>
-
-<ul>
-    {% for vehicle in vehicles %}
-        <li>
-            <a href="{% url 'vehicle_detail' vehicle.id %}">
-                {{ vehicle.number_plate }} - {{ vehicle.model }} ({{ vehicle.status }})
-            </a>
-        </li>
-    {% empty %}
-        <p>No vehicles found.</p>
-    {% endfor %}
-</ul>
-
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Plate</th>
+            <th>Model</th>
+            <th>Year</th>
+            <th>Status</th>
+            <th>Driver</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for v in vehicles %}
+        <tr>
+            <td>{{ v.number_plate }}</td>
+            <td>{{ v.model }}</td>
+            <td>{{ v.year }}</td>
+            <td>{{ v.status }}</td>
+            <td>{{ v.assigned_driver }}</td>
+            <td>
+                <a href="{% url 'vehicle_detail' v.id %}" class="btn btn-info btn-sm">View</a>
+                <a href="{% url 'vehicle_update' v.id %}" class="btn btn-warning btn-sm">Edit</a>
+                <a href="{% url 'vehicle_delete' v.id %}" class="btn btn-danger btn-sm">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}

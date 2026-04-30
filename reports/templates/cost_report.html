@@ -1,24 +1,27 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Maintenance Cost Report</h2>
+<h2>Cost Report (Maintenance & Repairs)</h2>
 
-<table border="1">
-    <tr>
-        <th>Vehicle</th>
-        <th>Issue</th>
-        <th>Cost</th>
-        <th>Date</th>
-    </tr>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Vehicle</th>
+            <th>Issue</th>
+            <th>Cost</th>
+            <th>Date</th>
+        </tr>
+    </thead>
 
-    {% for r in repairs %}
-    <tr>
-        <td>{{ r.vehicle }}</td>
-        <td>{{ r.issue }}</td>
-        <td>{{ r.cost }}</td>
-        <td>{{ r.repair_date }}</td>
-    </tr>
-    {% endfor %}
+    <tbody>
+        {% for c in costs %}
+        <tr>
+            <td>{{ c.vehicle }}</td>
+            <td>{{ c.issue }}</td>
+            <td>KSh {{ c.cost }}</td>
+            <td>{{ c.repaired_on }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
-
 {% endblock %}

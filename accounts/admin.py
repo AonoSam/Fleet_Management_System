@@ -1,12 +1,13 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from .models import User
+from .models import User, DriverProfile
 
 
-class CustomUserAdmin(UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (
-        ('Role Info', {'fields': ('role',)}),
-    )
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'role', 'phone_number')
+    list_filter = ('role',)
 
 
-admin.site.register(User, CustomUserAdmin)
+@admin.register(DriverProfile)
+class DriverProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'license_number', 'performance_score')

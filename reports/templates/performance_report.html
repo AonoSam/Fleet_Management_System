@@ -3,20 +3,25 @@
 {% block content %}
 <h2>Driver Performance Report</h2>
 
-<table border="1">
-    <tr>
-        <th>Driver</th>
-        <th>Vehicle</th>
-        <th>Performance Score</th>
-    </tr>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Driver</th>
+            <th>Trips</th>
+            <th>Total Collections</th>
+            <th>Score</th>
+        </tr>
+    </thead>
 
-    {% for d in drivers %}
-    <tr>
-        <td>{{ d.user.username }}</td>
-        <td>{{ d.vehicle }}</td>
-        <td>{{ d.performance_score }}</td>
-    </tr>
-    {% endfor %}
+    <tbody>
+        {% for r in report %}
+        <tr>
+            <td>{{ r.driver.user.username }}</td>
+            <td>{{ r.trips }}</td>
+            <td>KSh {{ r.total_collections }}</td>
+            <td>{{ r.score }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
-
 {% endblock %}

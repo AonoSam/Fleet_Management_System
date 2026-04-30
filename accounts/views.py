@@ -1,19 +1,12 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, logout
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from .models import User
+from django.contrib.auth import authenticate, login, logout
+from .forms import UserCreateForm
+from .services import get_all_users, create_user
+from .permissions import admin_required
 
 
-# =====================
-# LOGIN
-# =====================
 def login_view(request):
-
-    if request.user.is_authenticated:
-        return redirect_user(request.user)
-
-    if request.method == "POST":
+    if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
 
@@ -21,36 +14,41 @@ def login_view(request):
 
         if user:
             login(request, user)
-            return redirect_user(user)
 
-        messages.error(request, "Invalid username or password")
+            if user.role == 'ADMIN':
+                return redirect('admin_dashboard')
+            return redirect('driver_dashboard')
+
+        return render(request, 'login.html', {'error': 'Invalid credentials'})
 
     return render(request, 'login.html')
 
 
-# =====================
-# REDIRECT LOGIC
-# =====================
-def redirect_user(user):
-    if user.role == 'admin':
-        return redirect('dashboard')
-    return redirect('profile')
-
-
-# =====================
-# LOGOUT
-# =====================
-@login_required
 def logout_view(request):
     logout(request)
     return redirect('login')
 
 
-# =====================
-# PROFILE
-# =====================
-@login_required
-def profile(request):
-    return render(request, 'profile.html', {
-        'user': request.user
-    })
+@admin_required
+def user_list(request):
+    users = get_all_users()
+    return render(request, 'user_list.html', {'users': users})
+
+
+@admin_required
+def create_user_view(request):
+    form = UserCreateForm(request.POST or None)
+
+    if form.is_valid():
+        create_user(form)
+        return redirect('user_list')
+
+    return render(request, 'create_user.html', {'form': form})
+
+
+def admin_dashboard(request):
+    return render(request, 'admin_dashboard.html')
+
+
+def driver_dashboard(request):
+    return render(request, 'driver_dashboard.html')

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>My Vehicle</h2>
+
+{% if vehicle %}
+
+    <div class="card p-3">
+        <p><strong>Number Plate:</strong> {{ vehicle.number_plate }}</p>
+        <p><strong>Model:</strong> {{ vehicle.model }}</p>
+        <p><strong>Year:</strong> {{ vehicle.year }}</p>
+        <p><strong>Status:</strong> {{ vehicle.status }}</p>
+        <p><strong>Assigned Driver:</strong> {{ vehicle.assigned_driver.username }}</p>
+    </div>
+
+{% else %}
+
+    <div class="alert alert-warning">
+        No vehicle has been assigned to you yet.
+    </div>
+
+{% endif %}
+
+{% endblock %}

@@ -1,59 +1,31 @@
 from django.db import models
-from drivers.models import Driver
+from accounts.models import User
 
 
 class Loan(models.Model):
-
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ('cleared', 'Cleared'),
-    ]
-
-    driver = models.ForeignKey(Driver, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    reason = models.TextField()
-    loan_date = models.DateTimeField(auto_now_add=True)
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending'
+    STATUS_CHOICES = (
+        ('PENDING', 'Pending'),
+        ('ACTIVE', 'Active'),
+        ('PAID', 'Paid'),
     )
 
-    def __str__(self):
-        return f"{self.driver} - {self.amount}"
-
-    # =========================
-    # CALCULATE TOTAL PAID
-    # =========================
-    def total_paid(self):
-        return sum(r.amount_paid for r in self.repayments.all())
-
-    # =========================
-    # BALANCE REMAINING
-    # =========================
-    def balance(self):
-        return float(self.amount) - float(self.total_paid())
-
-    # =========================
-    # AUTO CHECK IF CLEARED
-    # =========================
-    def is_cleared(self):
-        return self.total_paid() >= float(self.amount)
-
-
-class LoanRepayment(models.Model):
-
-    loan = models.ForeignKey(
-        Loan,
+    driver = models.ForeignKey(
+        User,
         on_delete=models.CASCADE,
-        related_name="repayments"
+        limit_choices_to={'role': 'DRIVER'}
     )
 
-    amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
-    payment_date = models.DateTimeField(auto_now_add=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # ✅ FIXED: corrected spelling + required field
+    purpose = models.CharField(max_length=255)
+
+    interest_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+
+    issued_date = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.loan} - {self.amount_paid}"
+        return f"{self.driver.username} - {self.amount} ({self.status})"
