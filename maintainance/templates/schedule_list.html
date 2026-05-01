@@ -1,16 +1,22 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Maintenance Schedules</h2>
 
+<h2 class="mb-4">Maintenance Schedules</h2>
+
+<!-- 🔹 ACTION BUTTON -->
 <a href="{% url 'schedule_create' %}" class="btn btn-primary mb-3">
     Add Schedule
 </a>
 
-<table class="table table-bordered">
-    <thead>
+<!-- 🔹 TABLE CARD -->
+<div class="card p-3 shadow-sm">
+
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
         <tr>
             <th>Vehicle</th>
+            <th>Driver</th>
             <th>Date</th>
             <th>Description</th>
             <th>Status</th>
@@ -21,14 +27,32 @@
     <tbody>
         {% for s in schedules %}
         <tr>
-            <td>{{ s.vehicle }}</td>
-            <td>{{ s.service_date }}</td>
+
+            <!-- VEHICLE -->
+            <td>
+                {{ s.vehicle.number_plate }} <br>
+                <small class="text-muted">{{ s.vehicle.model }}</small>
+            </td>
+
+            <!-- DRIVER -->
+            <td>
+                {% if s.vehicle.assigned_driver %}
+                    {{ s.vehicle.assigned_driver.username }}
+                {% else %}
+                    <span class="text-muted">Unassigned</span>
+                {% endif %}
+            </td>
+
+            <!-- DATE -->
+            <td>{{ s.service_date|date:"M d, Y" }}</td>
+
+            <!-- DESCRIPTION -->
             <td>{{ s.description }}</td>
 
             <!-- STATUS -->
             <td>
                 {% if s.completed %}
-                    <span class="badge bg-success">Done</span>
+                    <span class="badge bg-success">Completed</span>
                 {% else %}
                     <span class="badge bg-warning text-dark">Pending</span>
                 {% endif %}
@@ -45,15 +69,20 @@
                     <span class="text-muted">No Action</span>
                 {% endif %}
             </td>
+
         </tr>
+
         {% empty %}
         <tr>
-            <td colspan="5" class="text-center">
+            <td colspan="6" class="text-center text-muted">
                 No maintenance schedules available
             </td>
         </tr>
         {% endfor %}
     </tbody>
+
 </table>
+
+</div>
 
 {% endblock %}

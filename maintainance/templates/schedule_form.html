@@ -1,22 +1,54 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Add Maintenance Schedule</h2>
 
-<form method="POST">
-    {% csrf_token %}
+<h2 class="mb-4">Add Maintenance Schedule</h2>
 
-    <select name="vehicle" class="form-control mb-2" required>
-        <option value="">-- Select Vehicle --</option>
-        {% for v in vehicles %}
-            <option value="{{ v.id }}">{{ v }}</option>
-        {% endfor %}
-    </select>
+<div class="card p-4 shadow-sm">
 
-    <input type="date" name="service_date" class="form-control mb-2" required>
+    <form method="POST">
+        {% csrf_token %}
 
-    <textarea name="description" class="form-control mb-2" placeholder="Description"></textarea>
+        <!-- 🔹 VEHICLE -->
+        <div class="mb-3">
+            <label class="form-label">Select Vehicle</label>
+            <select name="vehicle" class="form-control" required>
+                <option value="">-- Select Vehicle --</option>
+                {% for v in vehicles %}
+                    <option value="{{ v.id }}">
+                        {{ v.number_plate }} - {{ v.model }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <button class="btn btn-success">Save</button>
-</form>
+        <!-- 🔹 SERVICE DATE -->
+        <div class="mb-3">
+            <label class="form-label">Service Date</label>
+            <input type="date" name="service_date" class="form-control" required>
+        </div>
+
+        <!-- 🔹 DESCRIPTION -->
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" 
+                      class="form-control"
+                      rows="3"
+                      placeholder="e.g Oil change, Brake inspection, Engine service"
+                      required></textarea>
+        </div>
+
+        <!-- 🔹 ACTIONS -->
+        <button class="btn btn-success">
+            Save Schedule
+        </button>
+
+        <a href="{% url 'schedule_list' %}" class="btn btn-secondary">
+            Cancel
+        </a>
+
+    </form>
+
+</div>
+
 {% endblock %}

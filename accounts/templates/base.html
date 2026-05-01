@@ -5,18 +5,17 @@
     <meta charset="UTF-8">
     <title>Fleet Management System</title>
 
-    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
+
 <body>
 
 <div class="d-flex">
 
     <!-- 🔵 SIDEBAR -->
     <div class="bg-dark text-white p-3" style="width: 250px; min-height: 100vh;">
+
         <h4 class="text-center">FMS</h4>
         <hr>
 
@@ -24,91 +23,48 @@
 
             {% if request.user.is_authenticated %}
 
-                <!-- COMMON -->
+                <!-- 🔥 ROLE BASED DASHBOARD -->
                 <li class="nav-item">
-                    <a class="nav-link text-white" href="#">Dashboard</a>
+                    {% if request.user.role == 'ADMIN' %}
+                        <a class="nav-link text-white" href="{% url 'dashboard' %}">Dashboard</a>
+                    {% else %}
+                        <a class="nav-link text-white" href="{% url 'driver_dashboard' %}">Dashboard</a>
+                    {% endif %}
                 </li>
 
-                <!-- 🔔 NOTIFICATIONS LINK -->
-                <!-- <li class="nav-item">
-                    <a class="nav-link text-white" href="{% url 'alerts' %}">
-                        Notifications
-                    </a>
-                </li> -->
-
-                <!-- ADMIN ONLY -->
+                <!-- ADMIN -->
                 {% if request.user.role == 'ADMIN' %}
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{% url 'user_list' %}">Users</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{% url 'vehicle_list' %}">Vehicles</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{% url 'driver_list' %}">Drivers</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{% url 'admin_payment_list' %}">Payments</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{% url 'schedule_list' %}">Maintenance</a>
-                    </li>
 
-                    <!-- ✅ FIXED LOANS (ADMIN) -->
-                    <li class="nav-item">
-                        <a class="nav-link text-white fw-bold" href="{% url 'loan_list' %}">
-                            Loans
-                        </a>
-                    </li>
+                    <li class="mt-2 text-secondary">Management</li>
+                    <li><a class="nav-link text-white" href="{% url 'user_list' %}">Users</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'vehicle_list' %}">Vehicles</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'driver_list' %}">Drivers</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'admin_payment_list' %}">Payments</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'schedule_list' %}">Maintenance</a></li>
 
-                    <!-- REPORTS -->
-                    <li class="nav-item mt-2">
-                        <span class="text-secondary">Reports</span>
-                        <ul class="nav flex-column ms-3">
+                    <li class="mt-2 text-secondary">Loans</li>
+                    <li><a class="nav-link text-white" href="{% url 'loan_list' %}">All Loans</a></li>
 
-                            <li class="nav-item">
-                                <a class="nav-link text-white" href="{% url 'dashboard' %}">
-                                    Dashboard
-                                </a>
-                            </li>
+                    <li class="mt-2 text-secondary">Reports</li>
+                    <li><a class="nav-link text-white" href="{% url 'dashboard' %}">Finance Dashboard</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'cost_report' %}">Cost Report</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'performance_report' %}">Performance</a></li>
 
-                            <li class="nav-item">
-                                <a class="nav-link text-white" href="{% url 'cost_report' %}">
-                                    Cost Report
-                                </a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link text-white" href="{% url 'performance_report' %}">
-                                    Driver Performance
-                                </a>
-                            </li>
-
-                        </ul>
-                    </li>
                 {% endif %}
 
-                <!-- DRIVER ONLY -->
+                <!-- DRIVER -->
                 {% if request.user.role == 'DRIVER' %}
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{% url 'my_vehicle' %}">My Vehicle</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{% url 'payment_list' %}">My Payments</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-white" href="{% url 'my_maintenance' %}">Maintenance</a>
-                    </li>
 
-                    <!-- ✅ FIXED LOANS (DRIVER) -->
-                    <li class="nav-item">
-                        <a class="nav-link text-white fw-bold" href="{% url 'my_loans' %}">
-                            My Loans
-                        </a>
-                    </li>
+                    <li class="mt-2 text-secondary">Driver Panel</li>
+                    <li><a class="nav-link text-white" href="{% url 'my_vehicle' %}">My Vehicle</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'payment_list' %}">My Payments</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'my_maintenance' %}">Maintenance</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'my_loans' %}">My Loans</a></li>
+
                 {% endif %}
 
             {% endif %}
+
         </ul>
     </div>
 
@@ -117,6 +73,7 @@
 
         <!-- 🔷 NAVBAR -->
         <nav class="navbar navbar-light bg-light px-4">
+
             <div class="d-flex justify-content-between w-100">
 
                 <span class="navbar-brand mb-0 h5">
@@ -127,8 +84,9 @@
 
                     {% if request.user.is_authenticated %}
 
-                        <!-- 🔔 NOTIFICATION BELL -->
+                        <!-- 🔔 NOTIFICATIONS -->
                         <div class="dropdown me-3">
+
                             <a class="btn btn-light position-relative dropdown-toggle"
                                href="#"
                                role="button"
@@ -141,23 +99,52 @@
                                         {{ unread_count }}
                                     </span>
                                 {% endif %}
+
                             </a>
 
                             <ul class="dropdown-menu dropdown-menu-end p-2" style="width: 320px;">
 
-                                <!-- <li class="fw-bold mb-2">Notifications</li> -->
+                                <!-- 🔥 MARK ALL -->
+                                <li class="mb-2 text-end">
+                                    <form method="POST" action="{% url 'mark_all_read' %}">
+                                        {% csrf_token %}
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            Clear All
+                                        </button>
+                                    </form>
+                                </li>
 
-                                {% for n in notifications|slice:":5" %}
-                                    <li class="mb-2">
-                                        <small>{{ n.message }}</small><br>
-                                        <span class="text-muted" style="font-size:11px;">
-                                            {{ n.created_at }}
-                                        </span>
-                                        <hr>
-                                    </li>
-                                {% empty %}
-                                    <li>No notifications</li>
-                                {% endfor %}
+                                <hr>
+
+                                {% if notifications %}
+                                    {% for n in notifications|slice:":5" %}
+                                        <li class="mb-2">
+
+                                            <!-- 🔥 UNREAD HIGHLIGHT -->
+                                            <div style="{% if not n.is_read %}font-weight: bold;{% endif %}">
+                                                <small>{{ n.message }}</small><br>
+                                            </div>
+
+                                            <span class="text-muted" style="font-size:11px;">
+                                                {{ n.created_at|date:"M d, H:i" }}
+                                            </span>
+
+                                            <!-- 🔥 MARK SINGLE -->
+                                            {% if not n.is_read %}
+                                            <form method="POST" action="{% url 'mark_read' n.id %}">
+                                                {% csrf_token %}
+                                                <button class="btn btn-sm btn-link p-0">
+                                                    mark as read
+                                                </button>
+                                            </form>
+                                            {% endif %}
+
+                                            <hr>
+                                        </li>
+                                    {% endfor %}
+                                {% else %}
+                                    <li class="text-center p-2">No notifications</li>
+                                {% endif %}
 
                                 <li class="text-center">
                                     <a href="{% url 'alerts' %}" class="btn btn-sm btn-primary">
@@ -168,7 +155,7 @@
                             </ul>
                         </div>
 
-                        <!-- USER INFO -->
+                        <!-- USER -->
                         <span class="me-3">
                             {{ request.user.username }} ({{ request.user.role }})
                         </span>
@@ -197,17 +184,13 @@
 
         <!-- 🔶 PAGE CONTENT -->
         <div class="container mt-4">
-            {% block content %}
-            {% endblock %}
+            {% block content %}{% endblock %}
         </div>
 
     </div>
 </div>
 
-<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Custom JS -->
 <script src="{% static 'js/main.js' %}"></script>
 
 </body>

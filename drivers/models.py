@@ -18,7 +18,17 @@ class Driver(models.Model):
 
     performance_score = models.FloatField(default=0)
     total_trips = models.PositiveIntegerField(default=0)
-    total_collections = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_collections = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
 
     def __str__(self):
         return self.user.username
+
+
+# 🔥 ADD THIS HELPER (IMPORTANT FOR REPORTS)
+@property
+def get_user(self):
+    return self.user

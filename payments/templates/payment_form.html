@@ -1,21 +1,63 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <h2>Send Daily Collection</h2>
 
-<form method="POST">
-    {% csrf_token %}
+<div class="card p-4">
 
-    <input type="text" name="reference" placeholder="Reference"
-           class="form-control mb-2" required>
+    <!-- 🔹 VEHICLE INFO -->
+    {% if vehicle %}
+        <div class="alert alert-info">
+            <strong>Assigned Vehicle:</strong> {{ vehicle.number_plate }} - {{ vehicle.model }}
+        </div>
+    {% else %}
+        <div class="alert alert-danger">
+            You are not assigned to any vehicle. Contact admin.
+        </div>
+    {% endif %}
 
-    <input type="number" name="amount" placeholder="Amount"
-           class="form-control mb-2" required>
+    <form method="POST">
+        {% csrf_token %}
 
-    <input type="text" name="phone_number" placeholder="Phone Number"
-           class="form-control mb-2" required>
+        <!-- 🔹 AMOUNT -->
+        <div class="mb-3">
+            <label class="form-label">Amount (KSh)</label>
+            <input type="number" step="0.01" name="amount"
+                   class="form-control"
+                   placeholder="Enter amount collected"
+                   required>
+        </div>
 
-    <button class="btn btn-success">Send Payment</button>
-</form>
+        <!-- 🔹 REFERENCE -->
+        <div class="mb-3">
+            <label class="form-label">Transaction Reference</label>
+            <input type="text" name="reference"
+                   class="form-control"
+                   placeholder="e.g MPESA CODE / CASH REF"
+                   required>
+        </div>
+
+        <!-- 🔹 PHONE -->
+        <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="text" name="phone_number"
+                   class="form-control"
+                   placeholder="e.g 07XXXXXXXX"
+                   required>
+        </div>
+
+        <!-- 🔹 BUTTONS -->
+        <button class="btn btn-success">
+            Submit Payment
+        </button>
+
+        <a href="{% url 'payment_list' %}" class="btn btn-secondary">
+            Cancel
+        </a>
+
+    </form>
+
+</div>
 
 {% endblock %}

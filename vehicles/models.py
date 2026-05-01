@@ -13,7 +13,11 @@ class Vehicle(models.Model):
     model = models.CharField(max_length=100)
     year = models.PositiveIntegerField()
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE')
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='ACTIVE'
+    )
 
     assigned_driver = models.ForeignKey(
         User,

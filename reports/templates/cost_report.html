@@ -1,14 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Cost Report (Maintenance & Repairs)</h2>
 
-<table class="table table-bordered">
-    <thead>
+<h2 class="mb-4">Cost Report (Maintenance & Repairs)</h2>
+
+<div class="card p-3 shadow-sm">
+
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
         <tr>
             <th>Vehicle</th>
+            <th>Driver</th>
             <th>Issue</th>
-            <th>Cost</th>
+            <th>Cost (KSh)</th>
             <th>Date</th>
         </tr>
     </thead>
@@ -16,12 +20,46 @@
     <tbody>
         {% for c in costs %}
         <tr>
-            <td>{{ c.vehicle }}</td>
+
+            <!-- VEHICLE -->
+            <td>
+                {{ c.vehicle.number_plate }} <br>
+                <small class="text-muted">{{ c.vehicle.model }}</small>
+            </td>
+
+            <!-- DRIVER -->
+            <td>
+                {% if c.vehicle.assigned_driver %}
+                    {{ c.vehicle.assigned_driver.username }}
+                {% else %}
+                    <span class="text-muted">Unassigned</span>
+                {% endif %}
+            </td>
+
+            <!-- ISSUE -->
             <td>{{ c.issue }}</td>
-            <td>KSh {{ c.cost }}</td>
-            <td>{{ c.repaired_on }}</td>
+
+            <!-- COST -->
+            <td class="fw-bold text-danger">
+                KSh {{ c.cost|floatformat:2 }}
+            </td>
+
+            <!-- DATE -->
+            <td>{{ c.repaired_on|date:"M d, Y" }}</td>
+
+        </tr>
+
+        {% empty %}
+        <tr>
+            <td colspan="5" class="text-center text-muted">
+                No cost records available
+            </td>
         </tr>
         {% endfor %}
     </tbody>
+
 </table>
+
+</div>
+
 {% endblock %}

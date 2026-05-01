@@ -1,10 +1,14 @@
 from django.shortcuts import render
 from accounts.permissions import admin_required
-from .services import get_dashboard_stats, get_cost_report, get_driver_performance_report
+from .services import (
+    get_dashboard_stats,
+    get_cost_report,
+    get_driver_performance_report
+)
 
 
 # ----------------------
-# DASHBOARD REPORT
+# DASHBOARD
 # ----------------------
 @admin_required
 def dashboard(request):
@@ -24,7 +28,7 @@ def cost_report(request):
 
 
 # ----------------------
-# DRIVER PERFORMANCE REPORT
+# DRIVER PERFORMANCE
 # ----------------------
 @admin_required
 def performance_report(request):

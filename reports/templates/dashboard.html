@@ -1,37 +1,112 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Reports Dashboard</h2>
+
+<h2 class="mb-4">Reports Dashboard</h2>
 
 <div class="row">
 
-    <div class="col-md-3">
-        <div class="card p-3">
-            <h5>Total Income</h5>
-            <h3>KSh {{ total_income }}</h3>
+    <!-- 🔵 TOTAL INCOME -->
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Total Income</h6>
+            <h3 class="text-success">KSh {{ total_income }}</h3>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card p-3">
-            <h5>Total Expenses</h5>
-            <h3>KSh {{ total_expenses }}</h3>
+    <!-- 🔴 TOTAL EXPENSES -->
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Total Expenses</h6>
+            <h3 class="text-danger">KSh {{ total_expenses }}</h3>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card p-3">
-            <h5>Net Profit</h5>
-            <h3>KSh {{ net_profit }}</h3>
+    <!-- 🟢 NET PROFIT -->
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Net Profit</h6>
+            <h3 class="text-primary">KSh {{ net_profit }}</h3>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card p-3">
-            <h5>Total Drivers</h5>
+    <!-- 🚛 TOTAL DRIVERS -->
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Total Drivers</h6>
             <h3>{{ total_drivers }}</h3>
         </div>
     </div>
 
 </div>
+
+
+<!-- 🔥 LOAN KPIs -->
+<div class="row mt-4">
+
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Total Loans</h6>
+            <h3>KSh {{ total_loan_amount }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Active Loans</h6>
+            <h3>{{ active_loans }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Pending Loans</h6>
+            <h3>{{ pending_loans }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Paid Loans</h6>
+            <h3>{{ paid_loans }}</h3>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- 🔥 LOAN FINANCIAL BREAKDOWN (NEW - IMPORTANT FIX) -->
+<div class="row mt-4">
+
+    <div class="col-md-6 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Driver Loan Interest (Income)</h6>
+            <h3 class="text-success">KSh {{ driver_interest_income }}</h3>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <div class="card p-3 shadow-sm">
+            <h6 class="text-muted">Bank Loan Interest (Expense)</h6>
+            <h3 class="text-danger">KSh {{ bank_interest_expense }}</h3>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- 🔥 SYSTEM SUMMARY -->
+<div class="card p-3 mt-4 shadow-sm">
+
+    <h5>System Overview</h5>
+
+    <ul class="mb-0">
+        <li>Fleet financial tracking is active</li>
+        <li>Loans, payments, and repairs are fully integrated</li>
+        <li>Interest-based accounting is enabled (not principal-based)</li>
+        <li>Real-time profit calculation system active</li>
+    </ul>
+
+</div>
+
 {% endblock %}

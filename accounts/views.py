@@ -47,8 +47,10 @@ def create_user_view(request):
 
 
 def admin_dashboard(request):
+    # Here we can show metrics like total drivers, pending loans, payments etc
     return render(request, 'admin_dashboard.html')
 
 
 def driver_dashboard(request):
+    # Here we can show loan status, payments, maintenance schedules for the logged-in driver
     return render(request, 'driver_dashboard.html')

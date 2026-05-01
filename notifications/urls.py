@@ -4,8 +4,10 @@ from .views import alerts, unread_count, mark_read, mark_all_read
 urlpatterns = [
     path('', alerts, name='alerts'),
 
-    # API endpoints
+    # AJAX
     path('unread/', unread_count, name='unread_notifications'),
     path('read/<int:pk>/', mark_read, name='mark_read'),
+
+    # FORM ACTION
     path('read-all/', mark_all_read, name='mark_all_read'),
 ]

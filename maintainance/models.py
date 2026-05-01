@@ -7,6 +7,10 @@ class MaintenanceSchedule(models.Model):
     service_date = models.DateField()
     description = models.TextField()
     completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-service_date']
 
     def __str__(self):
         return f"{self.vehicle} - {self.service_date}"
@@ -15,8 +19,12 @@ class MaintenanceSchedule(models.Model):
 class RepairLog(models.Model):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE)
     issue = models.TextField()
-    cost = models.DecimalField(max_digits=10, decimal_places=2)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     repaired_on = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-repaired_on']
 
     def __str__(self):
         return f"{self.vehicle} - {self.issue}"

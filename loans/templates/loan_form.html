@@ -2,51 +2,113 @@
 
 {% block content %}
 
-<h2>Issue Loan</h2>
+<h2 class="mb-4">
+    {% if request.user.role == 'ADMIN' %}
+        Create Loan
+    {% else %}
+        Request Loan
+    {% endif %}
+</h2>
 
-<div class="card p-4">
+<div class="card p-4 shadow-sm">
 
     <form method="POST">
         {% csrf_token %}
 
-        <!-- DRIVER -->
+        <!-- 🔹 LOAN TYPE (ADMIN ONLY) -->
+        {% if request.user.role == 'ADMIN' %}
         <div class="mb-3">
+            <label class="form-label">Loan Type</label>
+            <select name="loan_type" id="loanType" class="form-control" required>
+                <option value="">-- Select Loan Type --</option>
+                <option value="DRIVER">Driver Loan</option>
+                <option value="BANK">Bank Loan (Company Borrowing)</option>
+            </select>
+        </div>
+        {% else %}
+            <!-- DRIVER AUTO TYPE -->
+            <input type="hidden" name="loan_type" value="DRIVER">
+        {% endif %}
+
+        <!-- 🔹 DRIVER FIELD -->
+        {% if request.user.role == 'ADMIN' %}
+        <div class="mb-3" id="driverField">
             <label class="form-label">Select Driver</label>
-            <select name="driver" class="form-control" required>
+            <select name="driver" id="driverSelect" class="form-control">
                 <option value="">-- Choose Driver --</option>
                 {% for d in drivers %}
                     <option value="{{ d.id }}">{{ d.username }}</option>
                 {% endfor %}
             </select>
+            <small class="text-muted">Required only for Driver Loans</small>
         </div>
+        {% else %}
+            <!-- DRIVER AUTO ASSIGNED -->
+            <input type="hidden" name="driver" value="{{ request.user.id }}">
+        {% endif %}
 
-        <!-- AMOUNT -->
+        <!-- 🔹 AMOUNT -->
         <div class="mb-3">
-            <label class="form-label">Loan Amount</label>
-            <input type="number" step="0.01" name="amount" class="form-control" required>
+            <label class="form-label">Loan Amount (KSh)</label>
+            <input 
+                type="number" 
+                step="0.01" 
+                min="1"
+                name="amount" 
+                class="form-control" 
+                required
+            >
         </div>
 
-        <!-- PURPOSE -->
+        <!-- 🔹 PURPOSE -->
         <div class="mb-3">
             <label class="form-label">Purpose</label>
-            <input type="text" name="purpose" class="form-control" placeholder="e.g Fuel, Repair, Emergency" required>
+            <input 
+                type="text" 
+                name="purpose" 
+                class="form-control"
+                placeholder="e.g Fuel, Emergency, Personal Use"
+            >
         </div>
 
-        <!-- INTEREST -->
+        <!-- 🔹 INTEREST -->
         <div class="mb-3">
             <label class="form-label">Interest Rate (%)</label>
-            <input type="number" step="0.01" name="interest_rate" class="form-control" value="0">
+
+            {% if request.user.role == 'ADMIN' %}
+                <input 
+                    type="number" 
+                    step="0.01" 
+                    min="0"
+                    name="interest_rate" 
+                    class="form-control" 
+                    value="0"
+                >
+            {% else %}
+                <!-- DRIVER CANNOT SET INTEREST -->
+                <input type="hidden" name="interest_rate" value="0">
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    value="Set by Admin after approval"
+                    disabled
+                >
+            {% endif %}
         </div>
 
-        <!-- DUE DATE -->
+        <!-- 🔹 DUE DATE -->
         <div class="mb-3">
             <label class="form-label">Due Date</label>
             <input type="date" name="due_date" class="form-control">
         </div>
 
-        <!-- BUTTONS -->
+        <!-- 🔹 BUTTONS -->
         <button type="submit" class="btn btn-success">
-            Issue Loan
+            {% if request.user.role == 'ADMIN' %}
+                Save Loan
+            {% else %}
+                Submit Request
+            {% endif %}
         </button>
 
         <a href="{% url 'loan_list' %}" class="btn btn-secondary">
@@ -56,5 +118,28 @@
     </form>
 
 </div>
+
+<!-- 🔥 JS (ADMIN ONLY) -->
+{% if request.user.role == 'ADMIN' %}
+<script>
+    const loanType = document.getElementById('loanType');
+    const driverField = document.getElementById('driverField');
+    const driverSelect = document.getElementById('driverSelect');
+
+    function toggleDriverField() {
+        if (loanType.value === 'DRIVER') {
+            driverField.style.display = 'block';
+            driverSelect.setAttribute('required', 'required');
+        } else {
+            driverField.style.display = 'none';
+            driverSelect.removeAttribute('required');
+            driverSelect.value = "";
+        }
+    }
+
+    loanType.addEventListener('change', toggleDriverField);
+    window.onload = toggleDriverField;
+</script>
+{% endif %}
 
 {% endblock %}

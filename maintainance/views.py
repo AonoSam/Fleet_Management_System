@@ -33,7 +33,7 @@ def schedule_create(request):
 
 
 # -------------------------
-# ✅ UPDATED: MARK COMPLETE + CREATE REPAIR LOG
+# MARK COMPLETE + REPAIR LOG
 # -------------------------
 @admin_required
 def mark_complete(request, pk):
@@ -42,21 +42,18 @@ def mark_complete(request, pk):
     if request.method == 'POST':
         cost = request.POST.get('cost')
 
-        # mark completed
         schedule.completed = True
         schedule.save()
 
-        # 🔥 create repair log automatically
         RepairLog.objects.create(
             vehicle=schedule.vehicle,
             issue=schedule.description,
-            cost=cost or 0,
+            cost=float(cost) if cost else 0,
             repaired_on=schedule.service_date
         )
 
         return redirect('schedule_list')
 
-    # show form to input cost
     return render(request, 'mark_complete.html', {'schedule': schedule})
 
 
@@ -70,7 +67,7 @@ def repair_logs(request):
 
 
 # -------------------------
-# ADMIN: ADD REPAIR (manual)
+# ADMIN: ADD REPAIR
 # -------------------------
 @admin_required
 def add_repair(request):
@@ -80,8 +77,8 @@ def add_repair(request):
         RepairLog.objects.create(
             vehicle_id=request.POST.get('vehicle'),
             issue=request.POST.get('issue'),
-            cost=request.POST.get('cost'),
-            repaired_on=request.POST.get('repaired_on')  # ✅ added date
+            cost=float(request.POST.get('cost') or 0),
+            repaired_on=request.POST.get('repaired_on')
         )
         return redirect('repair_logs')
 
@@ -89,7 +86,7 @@ def add_repair(request):
 
 
 # -------------------------
-# DRIVER: VIEW THEIR VEHICLE SCHEDULES
+# DRIVER VIEW
 # -------------------------
 @driver_required
 def my_maintenance(request):

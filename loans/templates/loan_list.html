@@ -2,18 +2,54 @@
 
 {% block content %}
 
-<h2>Loans</h2>
+<h2 class="mb-3">Loans</h2>
 
+<!-- 🔍 FILTERS -->
+<form method="get" class="row mb-3">
+    <div class="col-md-3">
+        <select name="type" class="form-control">
+            <option value="">All Types</option>
+            <option value="DRIVER" {% if request.GET.type == 'DRIVER' %}selected{% endif %}>Driver Loans</option>
+            <option value="BANK" {% if request.GET.type == 'BANK' %}selected{% endif %}>Bank Loans</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <select name="status" class="form-control">
+            <option value="">All Status</option>
+            <option value="PENDING" {% if request.GET.status == 'PENDING' %}selected{% endif %}>Pending</option>
+            <option value="ACTIVE" {% if request.GET.status == 'ACTIVE' %}selected{% endif %}>Active</option>
+            <option value="PAID" {% if request.GET.status == 'PAID' %}selected{% endif %}>Paid</option>
+            <option value="REJECTED" {% if request.GET.status == 'REJECTED' %}selected{% endif %}>Rejected</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <button class="btn btn-dark w-100">Filter</button>
+    </div>
+</form>
+
+<!-- ➕ ISSUE / REQUEST LOAN -->
 {% if request.user.role == 'ADMIN' %}
-<a href="{% url 'create_loan' %}" class="btn btn-primary mb-3">Issue Loan</a>
+    <a href="{% url 'create_loan' %}" class="btn btn-primary mb-3">
+        + Issue Loan
+    </a>
+{% elif request.user.role == 'DRIVER' %}
+    <a href="{% url 'request_loan' %}" class="btn btn-success mb-3">
+        + Request Loan
+    </a>
 {% endif %}
 
-<table class="table table-bordered">
-    <thead>
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
         <tr>
-            <th>Driver</th>
-            <th>Amount</th>
-            <th>Purpose</th>
+            <th>Type</th>
+            <th>Borrower</th>
+            <th>Principal</th>
+            <th>Interest</th>
+            <th>Total</th>
+            <th>Paid</th>
+            <th>Balance</th>
             <th>Status</th>
             <th>Due Date</th>
             <th>Actions</th>
@@ -23,16 +59,101 @@
     <tbody>
         {% for l in loans %}
         <tr>
-            <td>{{ l.driver.username }}</td>
-            <td>KSh {{ l.amount }}</td>
-            <td>{{ l.purpose }}</td>
-            <td>{{ l.status }}</td>
-            <td>{{ l.due_date }}</td>
+
+            <!-- TYPE -->
             <td>
+                {% if l.loan_type == 'BANK' %}
+                    <span class="badge bg-info">Bank</span>
+                {% else %}
+                    <span class="badge bg-secondary">Driver</span>
+                {% endif %}
+            </td>
+
+            <!-- BORROWER -->
+            <td>
+                {% if l.loan_type == 'BANK' %}
+                    <span class="text-muted">Company</span>
+                {% else %}
+                    {{ l.driver.username }}
+                {% endif %}
+            </td>
+
+            <!-- PRINCIPAL -->
+            <td>KSh {{ l.amount }}</td>
+
+            <!-- INTEREST -->
+            <td>
+                KSh {{ l.total_payable|floatformat:2|add:"-"|add:l.amount }}
+            </td>
+
+            <!-- TOTAL -->
+            <td>KSh {{ l.total_payable }}</td>
+
+            <!-- PAID -->
+            <td>KSh {{ l.total_paid }}</td>
+
+            <!-- BALANCE -->
+            <td>
+                <strong class="{% if l.balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                    KSh {{ l.balance }}
+                </strong>
+            </td>
+
+            <!-- STATUS -->
+            <td>
+                {% if l.status == 'PENDING' %}
+                    <span class="badge bg-warning text-dark">Pending</span>
+                {% elif l.status == 'ACTIVE' %}
+                    <span class="badge bg-primary">Active</span>
+                {% elif l.status == 'PAID' %}
+                    <span class="badge bg-success">Paid</span>
+                {% elif l.status == 'REJECTED' %}
+                    <span class="badge bg-danger">Rejected</span>
+                {% endif %}
+            </td>
+
+            <!-- DUE DATE -->
+            <td>
+                {% if l.due_date %}
+                    {{ l.due_date }}
+                {% else %}
+                    <span class="text-muted">---</span>
+                {% endif %}
+            </td>
+
+            <!-- ACTIONS -->
+            <td>
+
                 <a href="{% url 'loan_detail' l.id %}" class="btn btn-info btn-sm">
                     View
                 </a>
+
+                {% if request.user.role == 'ADMIN' %}
+
+                    {% if l.status == 'PENDING' %}
+                        <a href="{% url 'approve_loan' l.id %}" class="btn btn-success btn-sm">
+                            Approve
+                        </a>
+
+                        <a href="{% url 'reject_loan' l.id %}" class="btn btn-danger btn-sm">
+                            Reject
+                        </a>
+                    {% endif %}
+
+                    {% if l.status == 'ACTIVE' %}
+                        <a href="{% url 'repay_loan' l.id %}" class="btn btn-warning btn-sm">
+                            Repay
+                        </a>
+                    {% endif %}
+
+                {% endif %}
+
             </td>
+
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="10" class="text-center">No loans found</td>
         </tr>
         {% endfor %}
     </tbody>

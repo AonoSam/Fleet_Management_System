@@ -1,27 +1,63 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Driver Performance Report</h2>
 
-<table class="table table-bordered">
-    <thead>
+<h2 class="mb-4">Driver Performance Report</h2>
+
+<div class="card p-3 shadow-sm">
+
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
         <tr>
             <th>Driver</th>
             <th>Trips</th>
-            <th>Total Collections</th>
-            <th>Score</th>
+            <th>Total Collections (KSh)</th>
+            <th>Performance Score</th>
         </tr>
     </thead>
 
     <tbody>
         {% for r in report %}
         <tr>
-            <td>{{ r.driver.user.username }}</td>
+
+            <!-- DRIVER -->
+            <td>
+                {{ r.driver.user.username }} <br>
+                <small class="text-muted">{{ r.driver.license_number }}</small>
+            </td>
+
+            <!-- TRIPS -->
             <td>{{ r.trips }}</td>
-            <td>KSh {{ r.total_collections }}</td>
-            <td>{{ r.score }}</td>
+
+            <!-- COLLECTIONS -->
+            <td class="fw-bold text-success">
+                KSh {{ r.total_collections|floatformat:2 }}
+            </td>
+
+            <!-- SCORE -->
+            <td>
+                {% if r.score >= 80 %}
+                    <span class="badge bg-success">{{ r.score }} - Excellent</span>
+                {% elif r.score >= 50 %}
+                    <span class="badge bg-warning text-dark">{{ r.score }} - Average</span>
+                {% else %}
+                    <span class="badge bg-danger">{{ r.score }} - Poor</span>
+                {% endif %}
+            </td>
+
+        </tr>
+
+        {% empty %}
+        <tr>
+            <td colspan="4" class="text-center text-muted">
+                No performance data available
+            </td>
         </tr>
         {% endfor %}
     </tbody>
+
 </table>
+
+</div>
+
 {% endblock %}

@@ -1,16 +1,22 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Repair Logs</h2>
 
-<a href="{% url 'add_repair' %}" class="btn btn-primary mb-3">Add Repair</a>
+<h2 class="mb-4">Repair Logs</h2>
 
-<table class="table table-bordered">
-    <thead>
+<a href="{% url 'add_repair' %}" class="btn btn-primary mb-3">
+    Add Repair
+</a>
+
+<div class="card p-3 shadow-sm">
+
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
         <tr>
             <th>Vehicle</th>
+            <th>Driver</th>
             <th>Issue</th>
-            <th>Cost</th>
+            <th>Cost (KSh)</th>
             <th>Date</th>
         </tr>
     </thead>
@@ -18,12 +24,46 @@
     <tbody>
         {% for r in repairs %}
         <tr>
-            <td>{{ r.vehicle }}</td>
+
+            <!-- VEHICLE -->
+            <td>
+                {{ r.vehicle.number_plate }} <br>
+                <small class="text-muted">{{ r.vehicle.model }}</small>
+            </td>
+
+            <!-- DRIVER -->
+            <td>
+                {% if r.vehicle.assigned_driver %}
+                    {{ r.vehicle.assigned_driver.username }}
+                {% else %}
+                    <span class="text-muted">Unassigned</span>
+                {% endif %}
+            </td>
+
+            <!-- ISSUE -->
             <td>{{ r.issue }}</td>
-            <td>{{ r.cost }}</td>
-            <td>{{ r.repaired_on }}</td>
+
+            <!-- COST -->
+            <td class="fw-bold text-danger">
+                KSh {{ r.cost|floatformat:2 }}
+            </td>
+
+            <!-- DATE -->
+            <td>{{ r.repaired_on|date:"M d, Y" }}</td>
+
+        </tr>
+
+        {% empty %}
+        <tr>
+            <td colspan="5" class="text-center text-muted">
+                No repair records available
+            </td>
         </tr>
         {% endfor %}
     </tbody>
+
 </table>
+
+</div>
+
 {% endblock %}
