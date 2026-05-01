@@ -2,77 +2,113 @@
 
 {% block content %}
 
-<h2 class="mb-4">Record Repayment</h2>
+<h2 class="mb-4">Repay Loan</h2>
 
 <div class="row">
 
     <!-- 🔹 LOAN SUMMARY -->
     <div class="col-md-6">
-        <div class="card p-3 mb-3 shadow-sm">
+        <div class="card p-3 shadow-sm">
 
             <h5 class="mb-3">Loan Summary</h5>
 
-            <p><strong>Type:</strong>
-                {% if loan.loan_type == 'BANK' %}
-                    <span class="badge bg-info">Bank Loan</span>
-                {% else %}
-                    <span class="badge bg-secondary">Driver Loan</span>
-                {% endif %}
+            <p>
+                <strong>Borrower:</strong>
+                {{ loan.driver.username|default:"Company" }}
             </p>
 
-            <p><strong>Driver:</strong>
-                {% if loan.driver %}
-                    {{ loan.driver.username }}
-                {% else %}
-                    ---
-                {% endif %}
+            <p>
+                <strong>Principal:</strong>
+                KSh {{ loan.amount|floatformat:2 }}
             </p>
 
-            <p><strong>Total Payable:</strong> 
-                KSh {{ loan.total_payable|floatformat:2 }}
+            <p>
+                <strong>Total Payable:</strong>
+                <span class="text-primary">
+                    KSh {{ loan.total_payable|floatformat:2 }}
+                </span>
             </p>
 
-            <p><strong>Total Paid:</strong> 
-                KSh {{ loan.total_paid|floatformat:2 }}
+            <p>
+                <strong>Total Paid:</strong>
+                <span class="text-success">
+                    KSh {{ loan.total_paid|floatformat:2 }}
+                </span>
             </p>
 
-            <p><strong>Balance:</strong> 
-                <span class="fw-bold text-danger">
+            <p>
+                <strong>Balance:</strong>
+                <span class="fw-bold {% if loan.balance > 0 %}text-danger{% else %}text-success{% endif %}">
                     KSh {{ loan.balance|floatformat:2 }}
                 </span>
             </p>
 
+            <!-- 🔥 USER GUIDANCE -->
+            <div class="alert alert-info mt-3">
+                <small>
+                    If you choose <strong>M-Pesa</strong>, you will receive an STK Push on your phone to enter your PIN.
+                </small>
+            </div>
+
         </div>
     </div>
-
 
     <!-- 🔹 REPAYMENT FORM -->
     <div class="col-md-6">
         <div class="card p-3 shadow-sm">
 
-            <h5 class="mb-3">Enter Repayment</h5>
+            <h5 class="mb-3">Make Payment</h5>
 
             <form method="POST">
                 {% csrf_token %}
 
+                <!-- AMOUNT -->
                 <div class="mb-3">
                     <label class="form-label">Amount (KSh)</label>
                     <input 
-                        type="number" 
-                        step="0.01" 
+                        type="number"
+                        step="0.01"
                         min="1"
-                        name="amount" 
-                        class="form-control" 
-                        placeholder="Enter repayment amount"
+                        max="{{ loan.balance }}"
+                        name="amount"
+                        class="form-control"
+                        placeholder="Enter amount"
                         required
                     >
+                    <small class="text-muted">
+                        Maximum: KSh {{ loan.balance|floatformat:2 }}
+                    </small>
                 </div>
 
-                <button type="submit" class="btn btn-success">
+                <!-- METHOD -->
+                <div class="mb-3">
+                    <label class="form-label">Payment Method</label>
+                    <select name="method" id="paymentMethod" class="form-control" required>
+                        <option value="MANUAL">Manual (Cash / Admin)</option>
+                        <option value="MPESA">M-Pesa (STK Push)</option>
+                    </select>
+                </div>
+
+                <!-- 🔥 PHONE FIELD (MPESA ONLY) -->
+                <div class="mb-3" id="phoneField" style="display:none;">
+                    <label class="form-label">M-Pesa Phone Number</label>
+                    <input 
+                        type="text"
+                        name="phone_number"
+                        class="form-control"
+                        placeholder="07XXXXXXXX"
+                    >
+                    <small class="text-muted">
+                        STK Push will be sent to this number
+                    </small>
+                </div>
+
+                <!-- ACTION BUTTON -->
+                <button type="submit" class="btn btn-success w-100">
                     Submit Payment
                 </button>
 
-                <a href="{% url 'loan_detail' loan.id %}" class="btn btn-secondary">
+                <a href="{% url 'loan_detail' loan.id %}" class="btn btn-secondary w-100 mt-2">
                     Back
                 </a>
 
@@ -82,5 +118,24 @@
     </div>
 
 </div>
+
+<!-- 🔥 SCRIPT: TOGGLE PHONE FIELD -->
+<script>
+    const methodSelect = document.getElementById("paymentMethod");
+    const phoneField = document.getElementById("phoneField");
+
+    function togglePhoneField() {
+        if (methodSelect.value === "MPESA") {
+            phoneField.style.display = "block";
+        } else {
+            phoneField.style.display = "none";
+        }
+    }
+
+    methodSelect.addEventListener("change", togglePhoneField);
+
+    // Run on page load
+    togglePhoneField();
+</script>
 
 {% endblock %}

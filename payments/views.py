@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-
 from decimal import Decimal, InvalidOperation
 
+from django.urls import reverse
 
 from accounts.permissions import driver_required, admin_required
 from vehicles.models import Vehicle
@@ -14,58 +14,91 @@ from .services import (
     update_payment_status
 )
 
+from .mpesa.client import MpesaClient
 
 # -------------------------
-# DRIVER: CREATE PAYMENT
+# DRIVER: CREATE PAYMENT (FIXED MPESA FLOW)
 # -------------------------
 @driver_required
 def payment_form(request):
 
     vehicle = Vehicle.objects.filter(assigned_driver=request.user).first()
 
-    # 🚫 BLOCK if no vehicle assigned
     if not vehicle:
-        messages.error(request, "You are not assigned to any vehicle. Contact admin.")
+        messages.error(request, "You are not assigned to any vehicle.")
         return redirect('payment_list')
 
     if request.method == 'POST':
 
         amount = request.POST.get('amount')
-        reference = request.POST.get('reference')
         phone_number = request.POST.get('phone_number')
 
-        # 🔒 BASIC VALIDATION
-        if not amount or not reference or not phone_number:
-            messages.error(request, "All fields are required.")
+        # -------------------------
+        # VALIDATION
+        # -------------------------
+        if not amount or not phone_number:
+            messages.error(request, "All fields required.")
             return redirect('payment_form')
 
-        # 🔒 VALIDATE AMOUNT
         try:
             amount = Decimal(amount)
             if amount <= 0:
                 raise ValueError
         except (InvalidOperation, ValueError):
-            messages.error(request, "Enter a valid amount.")
+            messages.error(request, "Invalid amount.")
             return redirect('payment_form')
 
-        # 🔒 SIMPLE PHONE VALIDATION
         if not phone_number.startswith("07") or len(phone_number) != 10:
-            messages.error(request, "Enter a valid phone number (07XXXXXXXX).")
+            messages.error(request, "Invalid phone number.")
             return redirect('payment_form')
 
-        # 🔒 CREATE PAYMENT
-        payment_data = {
+        # -------------------------
+        # CREATE PAYMENT (TEMP)
+        # -------------------------
+        payment = create_payment({
             "driver": request.user,
             "vehicle": vehicle,
             "amount": amount,
-            "reference": reference,
             "phone_number": phone_number,
             "status": "PENDING"
-        }
+        })
 
-        create_payment(payment_data)
+        # -------------------------
+        # INITIATE STK PUSH
+        # -------------------------
+        mpesa = MpesaClient()
 
-        messages.success(request, "Payment submitted successfully and awaiting verification.")
+        callback_url = request.build_absolute_uri(
+            reverse('mpesa_callback')
+        )
+
+        response = mpesa.stk_push(
+            phone_number="254" + phone_number[1:],
+            amount=amount,
+            reference=payment.reference,
+            callback_url=callback_url
+        )
+
+        # -------------------------
+        # HANDLE STK RESPONSE (CRITICAL FIX)
+        # -------------------------
+        if not response.get("success"):
+            # ❌ STK FAILED → DELETE PAYMENT
+            payment.delete()
+
+            messages.error(request, f"Payment failed: {response.get('message')}")
+            return redirect('payment_form')
+
+        # -------------------------
+        # STK SUCCESS → SAVE CHECKOUT ID
+        # -------------------------
+        checkout_id = response.get("checkout_request_id")
+
+        if checkout_id:
+            payment.reference = checkout_id
+            payment.save(update_fields=['reference'])
+
+        messages.success(request, "STK Push sent. Enter PIN on your phone.")
         return redirect('payment_list')
 
     return render(request, 'payment_form.html', {
@@ -74,41 +107,32 @@ def payment_form(request):
 
 
 # -------------------------
-# DRIVER: VIEW PAYMENTS
+# DRIVER PAYMENTS
 # -------------------------
 @driver_required
 def payment_list(request):
-    payments = get_driver_payments(request.user)
-
     return render(request, 'payment_list.html', {
-        'payments': payments
+        'payments': get_driver_payments(request.user)
     })
 
 
 # -------------------------
-# ADMIN: VIEW ALL PAYMENTS
+# ADMIN PAYMENTS
 # -------------------------
 @admin_required
 def admin_payment_list(request):
-    payments = get_all_payments()
-
     return render(request, 'payment_list.html', {
-        'payments': payments
+        'payments': get_all_payments()
     })
 
 
 # -------------------------
-# ADMIN: VERIFY PAYMENT
+# MANUAL VERIFY (FALLBACK ONLY)
 # -------------------------
 @admin_required
 def verify_payment(request, pk):
     payment = get_object_or_404(Payment, pk=pk)
 
-    if payment.status == 'PENDING':
-        update_payment_status(payment, 'SUCCESS')
-
-        messages.success(request, "Payment verified successfully.")
-    else:
-        messages.warning(request, "Payment already processed.")
-
+    if payment.status != 'SUCCESS':
+        messages.warning(request, "Only completed MPESA payments can be verified.")
     return redirect('admin_payment_list')

@@ -1,20 +1,24 @@
-from django.db.models import Sum
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField
 from decimal import Decimal
 from .models import Loan, LoanRepayment
 
 
 # -------------------------
-# GET ALL LOANS
+# GET ALL LOANS (ADMIN SAFE VIEW)
 # -------------------------
 def get_all_loans(loan_type=None, status=None):
 
     loans = Loan.objects.select_related('driver')
 
-    if loan_type:
-        loans = loans.filter(loan_type=loan_type)
-
     if status:
         loans = loans.filter(status=status)
+    else:
+        loans = loans.filter(
+            status__in=['REQUESTED', 'PENDING', 'ACTIVE', 'PAID', 'REJECTED']
+        )
+
+    if loan_type:
+        loans = loans.filter(loan_type=loan_type)
 
     return loans.order_by('-issued_date')
 
@@ -31,7 +35,7 @@ def get_driver_loans(driver):
 
 
 # -------------------------
-# BANK LOANS (COMPANY LIABILITY VIEW ONLY)
+# BANK LOANS
 # -------------------------
 def get_bank_loans():
 
@@ -49,17 +53,42 @@ def get_loan(loan_id):
 
 
 # -------------------------
-# UPDATE STATUS
+# DRIVER INTEREST RULE ENGINE
 # -------------------------
-def update_loan_status(loan, status):
+def calculate_driver_interest(amount):
 
-    loan.status = status
-    loan.save()
+    amount = Decimal(amount)
+
+    if amount <= 100:
+        return Decimal('25')
+    elif amount <= 1000:
+        return Decimal('50')
+    elif amount <= 10000:
+        return Decimal('25')
+    else:
+        return Decimal('50')
+
+
+# -------------------------
+# 🔥 APPLY INTEREST (FIXED & GUARANTEED)
+# -------------------------
+def apply_interest_on_approval(loan):
+    """
+    Ensures interest is ALWAYS applied when admin approves
+    """
+
+    if loan.loan_type == 'DRIVER':
+
+        # prevent overwriting if already set
+        if not loan.interest_rate or loan.interest_rate == 0:
+            loan.interest_rate = calculate_driver_interest(loan.amount)
+            loan.save(update_fields=['interest_rate'])
+
     return loan
 
 
 # -------------------------
-# INTEREST CALCULATION (FINANCE CORE)
+# INTEREST CALCULATION
 # -------------------------
 def calculate_interest(loan):
 
@@ -85,7 +114,7 @@ def get_total_repaid(loan):
 
 
 # -------------------------
-# BALANCE (CASH OUTSTANDING ONLY)
+# BALANCE
 # -------------------------
 def get_balance(loan):
 
@@ -93,40 +122,45 @@ def get_balance(loan):
 
 
 # -------------------------
-# RECORD REPAYMENT
+# 🔥 RECORD REPAYMENT (MPESA READY)
 # -------------------------
-def record_repayment(loan, amount):
+def record_repayment(loan, amount, method="MANUAL", reference=None):
 
     amount = Decimal(str(amount))
 
     LoanRepayment.objects.create(
         loan=loan,
         amount=amount
+        # future fields if added:
+        # method=method,
+        # reference=reference
     )
 
+    # auto close loan
     if get_balance(loan) <= 0:
         loan.status = 'PAID'
-        loan.save()
+        loan.save(update_fields=['status'])
 
     return loan
 
 
 # -------------------------
-# 🔥 PROFIT ENGINE (MOST IMPORTANT FIX)
+# PROFIT ENGINE (ACCURATE)
 # -------------------------
 def get_loan_financial_impact():
 
+    interest_expr = ExpressionWrapper(
+        (F('amount') * F('interest_rate')) / Decimal('100'),
+        output_field=DecimalField(max_digits=12, decimal_places=2)
+    )
+
     driver_interest_income = Loan.objects.filter(
         loan_type='DRIVER'
-    ).aggregate(
-        total=Sum((F('amount') * F('interest_rate')) / 100)
-    )['total'] or Decimal('0.00')
+    ).aggregate(total=Sum(interest_expr))['total'] or Decimal('0.00')
 
     bank_interest_expense = Loan.objects.filter(
         loan_type='BANK'
-    ).aggregate(
-        total=Sum((F('amount') * F('interest_rate')) / 100)
-    )['total'] or Decimal('0.00')
+    ).aggregate(total=Sum(interest_expr))['total'] or Decimal('0.00')
 
     return {
         "driver_interest_income": driver_interest_income,
@@ -136,13 +170,13 @@ def get_loan_financial_impact():
 
 
 # -------------------------
-# LOAN SUMMARY (REPORTING ONLY)
+# LOAN SUMMARY (DASHBOARD READY)
 # -------------------------
 def get_loan_summary():
 
     return {
         "active": Loan.objects.filter(status='ACTIVE').count(),
-        "pending": Loan.objects.filter(status='PENDING').count(),
+        "pending": Loan.objects.filter(status__in=['PENDING', 'REQUESTED']).count(),
         "paid": Loan.objects.filter(status='PAID').count(),
 
         "bank_loans": Loan.objects.filter(loan_type='BANK').count(),

@@ -26,7 +26,6 @@
             </select>
         </div>
         {% else %}
-            <!-- DRIVER AUTO TYPE -->
             <input type="hidden" name="loan_type" value="DRIVER">
         {% endif %}
 
@@ -43,7 +42,6 @@
             <small class="text-muted">Required only for Driver Loans</small>
         </div>
         {% else %}
-            <!-- DRIVER AUTO ASSIGNED -->
             <input type="hidden" name="driver" value="{{ request.user.id }}">
         {% endif %}
 
@@ -56,6 +54,7 @@
                 min="1"
                 name="amount" 
                 class="form-control" 
+                id="amountInput"
                 required
             >
         </div>
@@ -84,15 +83,30 @@
                     class="form-control" 
                     value="0"
                 >
+                <small class="text-muted">
+                    Leave 0 for driver loans (auto-calculated on approval)
+                </small>
             {% else %}
-                <!-- DRIVER CANNOT SET INTEREST -->
                 <input type="hidden" name="interest_rate" value="0">
+
                 <input 
                     type="text" 
+                    id="interestPreview"
                     class="form-control" 
-                    value="Set by Admin after approval"
+                    value="Auto-calculated after approval"
                     disabled
                 >
+
+                <!-- 🔥 USER EDUCATION -->
+                <small class="text-info">
+                    Interest is automatically applied after approval:
+                    <br>
+                    • KSh 1 – 100 → 25%  
+                    <br>
+                    • KSh 101 – 1,000 → 50%  
+                    <br>
+                    • KSh 1,001 – 10,000 → 25%  
+                </small>
             {% endif %}
         </div>
 
@@ -119,7 +133,7 @@
 
 </div>
 
-<!-- 🔥 JS (ADMIN ONLY) -->
+<!-- 🔥 SMART UX SCRIPT -->
 {% if request.user.role == 'ADMIN' %}
 <script>
     const loanType = document.getElementById('loanType');
@@ -139,6 +153,34 @@
 
     loanType.addEventListener('change', toggleDriverField);
     window.onload = toggleDriverField;
+</script>
+{% endif %}
+
+<!-- 🔥 DRIVER INTEREST PREVIEW -->
+{% if request.user.role == 'DRIVER' %}
+<script>
+    const amountInput = document.getElementById('amountInput');
+    const interestPreview = document.getElementById('interestPreview');
+
+    function updateInterestPreview() {
+        const amount = parseFloat(amountInput.value);
+
+        if (!amount) {
+            interestPreview.value = "Auto-calculated after approval";
+            return;
+        }
+
+        let rate = 0;
+
+        if (amount <= 100) rate = 25;
+        else if (amount <= 1000) rate = 50;
+        else if (amount <= 10000) rate = 25;
+        else if (amount <= 100000) rate = 50;
+
+        interestPreview.value = rate + "% (will be applied after approval)";
+    }
+
+    amountInput.addEventListener('input', updateInterestPreview);
 </script>
 {% endif %}
 

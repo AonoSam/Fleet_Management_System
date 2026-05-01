@@ -1,6 +1,7 @@
 from decimal import Decimal
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 
 from accounts.permissions import admin_required, driver_required
 from accounts.models import User
@@ -11,7 +12,8 @@ from .services import (
     get_driver_loans,
     get_loan,
     record_repayment,
-    calculate_total_amount
+    calculate_total_amount,
+    calculate_driver_interest
 )
 
 from notifications.services import create_notification
@@ -56,21 +58,21 @@ def create_loan(request):
             interest_rate=interest_rate,
             due_date=request.POST.get('due_date') or None,
             status='PENDING',
-            requested_by=request.user  # ✅ admin initiated
+            requested_by=request.user
         )
 
-        # 🔔 NOTIFICATIONS
+        # Notifications
         if loan.loan_type == 'DRIVER' and loan.driver:
             create_notification(
                 loan.driver,
-                f"You have been issued a loan of KSh {loan.amount}. Waiting for approval.",
+                f"You have been issued a loan of KSh {loan.amount}. Awaiting approval.",
                 'SYSTEM'
             )
 
         elif loan.loan_type == 'BANK':
             create_notification(
                 request.user,
-                f"Company bank loan of KSh {loan.amount} recorded.",
+                f"Company loan of KSh {loan.amount} recorded.",
                 'SYSTEM'
             )
 
@@ -83,7 +85,7 @@ def create_loan(request):
 
 
 # -----------------------
-# DRIVER REQUEST LOAN ✅ NEW
+# DRIVER REQUEST LOAN
 # -----------------------
 @driver_required
 def request_loan(request):
@@ -97,13 +99,13 @@ def request_loan(request):
             driver=request.user,
             amount=amount,
             purpose=request.POST.get('purpose'),
-            interest_rate=Decimal('0.00'),  # admin sets later if needed
+            interest_rate=Decimal('0.00'),
             due_date=request.POST.get('due_date') or None,
-            status='PENDING',
-            requested_by=request.user  # ✅ driver initiated
+            status='REQUESTED',
+            requested_by=request.user
         )
 
-        # 🔔 Notify admin(s)
+        # Notify admins
         admins = User.objects.filter(role='ADMIN')
 
         for admin in admins:
@@ -113,10 +115,10 @@ def request_loan(request):
                 'SYSTEM'
             )
 
-        messages.success(request, "Loan request submitted. Awaiting approval.")
+        messages.success(request, "Loan request submitted.")
         return redirect('my_loans')
 
-    return render(request, 'loan_form.html')  # reuse same form
+    return render(request, 'loan_form.html')
 
 
 # -----------------------
@@ -134,21 +136,26 @@ def loan_detail(request, pk):
 
 
 # -----------------------
-# APPROVE LOAN
+# APPROVE LOAN (FIXED FLOW)
 # -----------------------
 @admin_required
 def approve_loan(request, pk):
 
     loan = get_loan(pk)
 
+    # 🔥 apply interest ONLY once
+    if loan.loan_type == 'DRIVER' and loan.interest_rate == 0:
+        loan.interest_rate = calculate_driver_interest(loan.amount)
+
     loan.status = 'ACTIVE'
     loan.approved_by = request.user
     loan.save()
 
+    # Notify driver
     if loan.driver:
         create_notification(
             loan.driver,
-            f"Your loan of KSh {loan.amount} has been APPROVED.",
+            f"Loan of KSh {loan.amount} approved at {loan.interest_rate}%.",
             'SYSTEM'
         )
 
@@ -178,35 +185,103 @@ def reject_loan(request, pk):
     messages.warning(request, "Loan rejected.")
     return redirect('loan_list')
 
-
 # -----------------------
-# REPAY LOAN
+# REPAY LOAN (MPESA + MANUAL FIXED)
 # -----------------------
-@admin_required
+@login_required
 def repay_loan(request, pk):
 
     loan = get_loan(pk)
 
+    # 🔐 SECURITY
+    if request.user.role == 'DRIVER' and loan.driver != request.user:
+        messages.error(request, "Not allowed.")
+        return redirect('my_loans')
+
     if request.method == 'POST':
 
         amount = Decimal(request.POST.get('amount') or 0)
+        method = request.POST.get('method')
+        phone_number = request.POST.get('phone_number')
 
-        record_repayment(loan, amount)
+        if amount <= 0:
+            messages.error(request, "Invalid amount.")
+            return redirect('loan_detail', pk=pk)
 
-        if loan.driver:
-            create_notification(
-                loan.driver,
-                f"Repayment of KSh {amount} recorded.",
-                'PAYMENT'
+        # =========================
+        # 🔵 MPESA FLOW
+        # =========================
+        if method == "MPESA":
+
+            if not phone_number or not phone_number.startswith("07"):
+                messages.error(request, "Enter valid phone number.")
+                return redirect('loan_detail', pk=pk)
+
+            from payments.services import create_payment
+            from payments.mpesa.client import MpesaClient
+            from django.urls import reverse
+
+            # 🔥 CREATE PAYMENT (LINKED TO LOAN)
+            payment = create_payment({
+                "driver": loan.driver,
+                "loan": loan,
+                "payment_type": "LOAN_REPAYMENT",
+                "amount": amount,
+                "phone_number": phone_number,
+                "status": "PENDING"
+            })
+
+            # 🔥 INITIATE STK
+            mpesa = MpesaClient()
+
+            callback_url = request.build_absolute_uri(
+                reverse('mpesa_callback')
             )
 
-        messages.success(request, "Repayment recorded.")
-        return redirect('loan_detail', pk=pk)
+            response = mpesa.stk_push(
+                phone_number="254" + phone_number[1:],
+                amount=amount,
+                reference=payment.reference,
+                callback_url=callback_url
+            )
+
+            # 🔥 HANDLE FAILURE (CRITICAL)
+            if not response.get("success"):
+                payment.delete()
+
+                messages.error(request, f"STK failed: {response.get('message')}")
+                return redirect('loan_detail', pk=pk)
+
+            # 🔥 SAVE CHECKOUT ID
+            checkout_id = response.get("checkout_request_id")
+
+            if checkout_id:
+                payment.reference = checkout_id
+                payment.save(update_fields=['reference'])
+
+            messages.success(request, "STK sent. Complete payment on your phone.")
+            return redirect('loan_detail', pk=pk)
+
+        # =========================
+        # 🟡 MANUAL FLOW
+        # =========================
+        else:
+
+            record_repayment(loan, amount)
+
+            if loan.driver:
+                create_notification(
+                    loan.driver,
+                    f"Manual repayment of KSh {amount} recorded.",
+                    'PAYMENT'
+                )
+
+            messages.success(request, "Manual repayment recorded.")
+            return redirect('loan_detail', pk=pk)
 
     return render(request, 'loan_repay.html', {
         'loan': loan
     })
-
 
 # -----------------------
 # DRIVER LOANS

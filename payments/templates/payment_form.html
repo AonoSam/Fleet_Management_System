@@ -2,57 +2,55 @@
 
 {% block content %}
 
-<h2>Send Daily Collection</h2>
+<h2>Send Daily Collection (M-Pesa Enabled)</h2>
 
 <div class="card p-4">
 
-    <!-- 🔹 VEHICLE INFO -->
     {% if vehicle %}
         <div class="alert alert-info">
-            <strong>Assigned Vehicle:</strong> {{ vehicle.number_plate }} - {{ vehicle.model }}
+            <strong>Assigned Vehicle:</strong>
+            {{ vehicle.number_plate }} - {{ vehicle.model }}
         </div>
     {% else %}
         <div class="alert alert-danger">
-            You are not assigned to any vehicle. Contact admin.
+            You are not assigned to any vehicle.
         </div>
     {% endif %}
+
+    <div class="alert alert-warning">
+        You will receive an <strong>STK Push</strong> on your phone after submission.
+    </div>
 
     <form method="POST">
         {% csrf_token %}
 
-        <!-- 🔹 AMOUNT -->
+        <!-- AMOUNT -->
         <div class="mb-3">
-            <label class="form-label">Amount (KSh)</label>
-            <input type="number" step="0.01" name="amount"
+            <label>Amount (KSh)</label>
+            <input type="number" step="0.01" min="1"
+                   name="amount"
                    class="form-control"
-                   placeholder="Enter amount collected"
                    required>
         </div>
 
-        <!-- 🔹 REFERENCE -->
+        <!-- PHONE -->
         <div class="mb-3">
-            <label class="form-label">Transaction Reference</label>
-            <input type="text" name="reference"
+            <label>M-Pesa Phone</label>
+            <input type="text"
+                   name="phone_number"
                    class="form-control"
-                   placeholder="e.g MPESA CODE / CASH REF"
+                   placeholder="07XXXXXXXX"
                    required>
         </div>
 
-        <!-- 🔹 PHONE -->
-        <div class="mb-3">
-            <label class="form-label">Phone Number</label>
-            <input type="text" name="phone_number"
-                   class="form-control"
-                   placeholder="e.g 07XXXXXXXX"
-                   required>
-        </div>
+        <!-- REMOVE FAKE REFERENCE (IMPORTANT FIX) -->
+        <input type="hidden" name="reference" value="AUTO_GENERATED">
 
-        <!-- 🔹 BUTTONS -->
-        <button class="btn btn-success">
-            Submit Payment
+        <button class="btn btn-success w-100">
+            Send STK Push
         </button>
 
-        <a href="{% url 'payment_list' %}" class="btn btn-secondary">
+        <a href="{% url 'payment_list' %}" class="btn btn-secondary w-100 mt-2">
             Cancel
         </a>
 
