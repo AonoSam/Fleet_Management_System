@@ -97,6 +97,43 @@ AUTH_USER_MODEL = 'accounts.User'
 # ==============================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 # ==============================
 # 🔥 MPESA DARAJA CONFIG (PRODUCTION READY)
 # ==============================
+
+MPESA_ENVIRONMENT = "sandbox"  # change to "production" when live
+
+MPESA_CONSUMER_KEY = "G2HU6Sfcnq160p8D5tYPp8LrVAdgftqJ6gipBC5lHh7d4Eyo"
+MPESA_CONSUMER_SECRET = "rZDsUn1GcnoDFJbVoZKfFmR075S9ZBZAV0HJzfgaGNBBwcsehTcCfhirsBJwLwFm"
+
+# 🔥 IMPORTANT: Use correct shortcode per environment
+MPESA_SHORTCODE = "174379"  # sandbox test shortcode
+MPESA_PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
+
+# ==============================
+# 🔥 CALLBACK CONFIGURATION
+# ==============================
+
+# ⚠️ IMPORTANT:
+# These MUST be publicly accessible URLs in production (NOT localhost)
+
+MPESA_CALLBACK_URL = "https://freddy-porkiest-rumblingly.ngrok-free.dev/mpesa/callback/"
+MPESA_TIMEOUT_URL = "https://yourdomain.com/payments/mpesa/timeout/"
+
+# ==============================
+# 🔥 SECURITY + FORMAT RULES
+# ==============================
+
+MPESA_COUNTRY_CODE = "254"
+
+# Force consistent phone normalization across system
+MPESA_PHONE_FORMAT = "E164"  # internal standard
+
+# ==============================
+# 🔥 DEBUG HELP (SAFE FOR DEV)
+# ==============================
+
+MPESA_DEBUG = True
+
+
