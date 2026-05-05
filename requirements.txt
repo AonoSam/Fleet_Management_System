@@ -1,0 +1,9 @@
+python manage.py shell
+
+from accounts.models import User
+
+User.objects.create_user(
+    username='admin1',
+    password='admin123',
+    role='ADMIN'
+)

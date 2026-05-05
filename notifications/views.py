@@ -34,9 +34,8 @@ def unread_count(request):
 def mark_read(request, pk):
     if request.method == "POST":
         mark_as_read(pk, request.user)
-        return JsonResponse({'status': 'ok'})
 
-    return JsonResponse({'status': 'invalid'}, status=400)
+    return redirect('alerts')  # 🔥 reload page properly
 
 
 # -------------------------
