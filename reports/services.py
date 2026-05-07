@@ -8,15 +8,20 @@ from loans.models import Loan
 # ----------------------
 # DASHBOARD STATS (REAL ACCOUNTING ENGINE)
 # ----------------------
+def get_valid_loans():
+    return Loan.objects.exclude(status='REJECTED')
+
 def get_dashboard_stats():
+    
+    valid_loans = Loan.objects.exclude(status='REJECTED')
 
     # ---------------- INCOME ----------------
     payment_income = Payment.objects.filter(
         status='SUCCESS'
     ).aggregate(total=Sum('amount'))['total'] or 0
 
-    # ✅ CORRECT: calculate realized interest (loop through loans)
-    driver_loans = Loan.objects.filter(loan_type='DRIVER')
+    # ✅ ONLY VALID DRIVER LOANS
+    driver_loans = valid_loans.filter(loan_type='DRIVER')
     driver_interest_income = sum(
         loan.interest_income() for loan in driver_loans
     )
@@ -29,8 +34,8 @@ def get_dashboard_stats():
         total=Sum('cost')
     )['total'] or 0
 
-    # ✅ CORRECT: bank interest expense (realized only)
-    bank_loans = Loan.objects.filter(loan_type='BANK')
+    # ✅ ONLY VALID BANK LOANS
+    bank_loans = valid_loans.filter(loan_type='BANK')
     bank_interest_expense = sum(
         loan.interest_expense() for loan in bank_loans
     )
@@ -38,14 +43,14 @@ def get_dashboard_stats():
     total_expenses = maintenance_expenses + bank_interest_expense
 
 
-    # ---------------- LOAN KPI (NO PROFIT IMPACT) ----------------
-    total_loan_amount = Loan.objects.aggregate(
+    # ---------------- LOAN KPI ----------------
+    total_loan_amount = valid_loans.aggregate(
         total=Sum('amount')
     )['total'] or 0
 
-    active_loans = Loan.objects.filter(status='ACTIVE').count()
-    pending_loans = Loan.objects.filter(status='PENDING').count()
-    paid_loans = Loan.objects.filter(status='PAID').count()
+    active_loans = valid_loans.filter(status='ACTIVE').count()
+    pending_loans = valid_loans.filter(status='PENDING').count()
+    paid_loans = valid_loans.filter(status='PAID').count()
 
 
     # ---------------- FINAL PROFIT ----------------
@@ -68,7 +73,6 @@ def get_dashboard_stats():
         "total_drivers": User.objects.filter(role='DRIVER').count(),
     }
 
-
 # ----------------------
 # COST REPORT
 # ----------------------
@@ -88,7 +92,7 @@ def get_driver_performance_report():
     for d in drivers:
 
         payments = Payment.objects.filter(driver=d, status='SUCCESS')
-        loans = Loan.objects.filter(driver=d, loan_type='DRIVER')
+        loans = Loan.objects.filter(driver=d, loan_type='DRIVER').exclude(status='REJECTED')
 
         income = payments.aggregate(total=Sum('amount'))['total'] or 0
         loan_amount = loans.aggregate(total=Sum('amount'))['total'] or 0

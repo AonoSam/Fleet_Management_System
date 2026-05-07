@@ -8,8 +8,12 @@ from .models import Loan, LoanRepayment
 # GET ALL LOANS
 # =========================
 def get_all_loans(loan_type=None, status=None):
-
+    
     loans = Loan.objects.select_related('driver')
+
+    # 🔥 EXCLUDE rejected by default
+    if not status:
+        loans = loans.exclude(status='REJECTED')
 
     if loan_type:
         loans = loans.filter(loan_type=loan_type)
@@ -105,7 +109,7 @@ def calculate_total_amount(loan):
 def get_total_repaid(loan):
 
     return loan.repayments.aggregate(
-        total=Sum('amount_paid')
+        total=Sum('amount')
     )['total'] or Decimal('0.00')
 
 
@@ -126,7 +130,7 @@ def record_repayment(loan, amount):
 
     LoanRepayment.objects.create(
         loan=loan,
-        amount_paid=amount
+        amount=amount
     )
 
     # update status automatically
@@ -141,32 +145,35 @@ def record_repayment(loan, amount):
 # LOAN DASHBOARD SUMMARY
 # =========================
 def get_loan_summary():
+    
+    valid_loans = Loan.objects.exclude(status='REJECTED')
 
     return {
-        "active": Loan.objects.filter(status='ACTIVE').count(),
-        "pending": Loan.objects.filter(status='PENDING').count(),
-        "paid": Loan.objects.filter(status='PAID').count(),
+        "active": valid_loans.filter(status='ACTIVE').count(),
+        "pending": valid_loans.filter(status='PENDING').count(),
+        "paid": valid_loans.filter(status='PAID').count(),
 
-        "bank_loans": Loan.objects.filter(loan_type='BANK').count(),
-        "driver_loans": Loan.objects.filter(loan_type='DRIVER').count(),
+        "bank_loans": valid_loans.filter(loan_type='BANK').count(),
+        "driver_loans": valid_loans.filter(loan_type='DRIVER').count(),
     }
-
 
 # =========================
 # FINANCIAL IMPACT (PROFIT TRACKING)
 # =========================
 def get_loan_financial_impact():
+    
+    valid_loans = Loan.objects.exclude(status='REJECTED')
 
     interest_expr = ExpressionWrapper(
         (F('amount') * F('interest_rate')) / Decimal('100'),
         output_field=DecimalField(max_digits=12, decimal_places=2)
     )
 
-    driver_income = Loan.objects.filter(
+    driver_income = valid_loans.filter(
         loan_type='DRIVER'
     ).aggregate(total=Sum(interest_expr))['total'] or Decimal('0.00')
 
-    bank_cost = Loan.objects.filter(
+    bank_cost = valid_loans.filter(
         loan_type='BANK'
     ).aggregate(total=Sum(interest_expr))['total'] or Decimal('0.00')
 
