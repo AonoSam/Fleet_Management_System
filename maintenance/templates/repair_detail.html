@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --radius: 12px; --border: #e2e8f0; --surface: #fff;
+    --surface-2: #f8fafc; --text-main: #0f172a; --text-muted: #64748b;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08); --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+  }
+  .detail-wrap { max-width: 780px; margin: 0 auto; }
+  .detail-header {
+    background: linear-gradient(135deg, #1e3a5f, #2563eb);
+    border-radius: var(--radius); padding: 26px 30px;
+    color: #fff; margin-bottom: 24px; position: relative; overflow: hidden;
+  }
+  .detail-header::after {
+    content:''; position:absolute; right:-30px; top:-30px;
+    width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,.06);
+  }
+  .number-plate {
+    background: #fff; color: #0f172a; border-radius: 7px;
+    padding: 5px 16px; font-size: 1.1rem; font-weight: 800;
+    letter-spacing: .15em; display: inline-block; margin-bottom: 10px;
+  }
+  .detail-title { font-size: 1.3rem; font-weight: 700; }
+  .detail-sub   { font-size: .86rem; opacity: .75; margin-top: 3px; }
+
+  .detail-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .detail-card-head {
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2); font-weight: 700; font-size: .8rem;
+    text-transform: uppercase; letter-spacing: .07em; color: var(--text-main);
+  }
+  .detail-card-body { padding: 20px; }
+
+  .drow {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: .88rem;
+  }
+  .drow:last-child { border-bottom: none; }
+  .drow .k { color: var(--text-muted); font-weight: 500; }
+  .drow .v { font-weight: 600; color: var(--text-main); }
+
+  .badge-s {
+    display:inline-block; padding:4px 12px; border-radius:99px;
+    font-size:.75rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  }
+  .bc-engine       { background:#fee2e2; color:#991b1b; }
+  .bc-transmission { background:#fef3c7; color:#92400e; }
+  .bc-brakes       { background:#fde8d8; color:#9a3412; }
+  .bc-tyres        { background:#e0e7ff; color:#3730a3; }
+  .bc-electrical   { background:#fef9c3; color:#713f12; }
+  .bc-body         { background:#dbeafe; color:#1e40af; }
+  .bc-suspension   { background:#ede9fe; color:#5b21b6; }
+  .bc-fuel_system  { background:#d1fae5; color:#065f46; }
+  .bc-cooling      { background:#cffafe; color:#164e63; }
+  .bc-general      { background:#f1f5f9; color:#334155; }
+  .bc-other        { background:#f1f5f9; color:#334155; }
+  .bp-pending      { background:#fef3c7; color:#92400e; }
+  .bp-in_progress  { background:#dbeafe; color:#1e40af; }
+  .bp-completed    { background:#d1fae5; color:#065f46; }
+  .bp-on_hold      { background:#fee2e2; color:#991b1b; }
+
+  .issue-box {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 9px; padding: 16px; font-size: .9rem;
+    color: var(--text-main); line-height: 1.6;
+  }
+  .cost-display {
+    font-size: 2rem; font-weight: 800; color: var(--text-main);
+    letter-spacing: -.03em;
+  }
+  .action-row { display: flex; gap: 10px; margin-top: 4px; }
+</style>
+
+
+<div class="detail-wrap">
+
+  <!-- Header -->
+  <div class="detail-header">
+    <div class="number-plate">{{ repair.vehicle.number_plate }}</div>
+    <div class="detail-title">{{ repair.get_category_display }} Repair</div>
+    <div class="detail-sub">{{ repair.vehicle.model }} &nbsp;·&nbsp; Logged {{ repair.created_at|date:"M d, Y" }}</div>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="action-row mb-4">
+    <a href="{% url 'repair_logs' %}" class="btn btn-outline-secondary btn-sm">← All Repairs</a>
+    <a href="{% url 'edit_repair' repair.pk %}" class="btn btn-warning btn-sm">✏️ Edit</a>
+    <a href="{% url 'delete_repair' repair.pk %}" class="btn btn-danger btn-sm">🗑 Delete</a>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Left: details -->
+    <div class="col-md-7">
+      <div class="detail-card">
+        <div class="detail-card-head">📋 Repair Details</div>
+        <div class="detail-card-body">
+          <div class="drow">
+            <span class="k">Vehicle</span>
+            <span class="v">{{ repair.vehicle.number_plate }} — {{ repair.vehicle.model }}</span>
+          </div>
+          <div class="drow">
+            <span class="k">Category</span>
+            <span class="v">
+              <span class="badge-s bc-{{ repair.category|lower }}">{{ repair.get_category_display }}</span>
+            </span>
+          </div>
+          <div class="drow">
+            <span class="k">Mechanic</span>
+            <span class="v">{{ repair.mechanic|default:"Not assigned" }}</span>
+          </div>
+          <div class="drow">
+            <span class="k">Repair Date</span>
+            <span class="v">{{ repair.repaired_on|date:"M d, Y"|default:"Not set" }}</span>
+          </div>
+          <div class="drow">
+            <span class="k">Logged On</span>
+            <span class="v">{{ repair.created_at|date:"M d, Y H:i" }}</span>
+          </div>
+          <div class="drow">
+            <span class="k">Progress</span>
+            <span class="v">
+              <span class="badge-s bp-{{ repair.progress|lower }}">{{ repair.get_progress_display }}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <div class="detail-card-head">📝 Description / Issue</div>
+        <div class="detail-card-body">
+          <div class="issue-box">{{ repair.issue }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: cost + status -->
+    <div class="col-md-5">
+      <div class="detail-card">
+        <div class="detail-card-head">💰 Cost</div>
+        <div class="detail-card-body" style="text-align:center;padding:28px 20px;">
+          <div style="font-size:.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Total Repair Cost</div>
+          <div class="cost-display">KES {{ repair.cost|floatformat:2 }}</div>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <div class="detail-card-head">📊 Status</div>
+        <div class="detail-card-body" style="text-align:center;padding:24px 20px;">
+          <span class="badge-s bp-{{ repair.progress|lower }}" style="font-size:.9rem;padding:8px 22px;">
+            {{ repair.get_progress_display }}
+          </span>
+          <div style="margin-top:14px;">
+            <a href="{% url 'edit_repair' repair.pk %}" class="btn btn-sm btn-outline-primary w-100">
+              Update Progress
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

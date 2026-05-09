@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --radius:12px; --border:#e2e8f0; --surface:#fff;
+    --surface-2:#f8fafc; --text-main:#0f172a; --text-muted:#64748b;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+  }
+  .page-title { font-size:1.3rem; font-weight:800; color:var(--text-main); margin-bottom:4px; }
+  .page-sub   { font-size:.85rem; color:var(--text-muted); margin-bottom:24px; }
+  .section-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow-sm); overflow:hidden; margin-bottom:24px;
+  }
+  .card-head {
+    padding:13px 20px; border-bottom:1px solid var(--border);
+    background:var(--surface-2); font-weight:700; font-size:.8rem;
+    text-transform:uppercase; letter-spacing:.07em; color:var(--text-main);
+  }
+  .card-body-inner { padding:18px 20px; }
+
+  .srow {
+    display:flex; align-items:flex-start; gap:14px;
+    padding:12px 0; border-bottom:1px solid var(--border); font-size:.86rem;
+  }
+  .srow:last-child { border-bottom:none; }
+  .srow-icon { font-size:1.3rem; flex-shrink:0; margin-top:2px; }
+  .srow-date { font-size:.75rem; color:var(--text-muted); margin-top:3px; }
+
+  .badge-s {
+    display:inline-block; padding:3px 10px; border-radius:99px;
+    font-size:.71rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  }
+  .bs-completed   { background:#d1fae5; color:#065f46; }
+  .bs-pending     { background:#fef3c7; color:#92400e; }
+  .bs-in_progress { background:#dbeafe; color:#1e40af; }
+  .bs-on_hold     { background:#fee2e2; color:#991b1b; }
+  .bs-overdue     { background:#fee2e2; color:#991b1b; }
+  .bs-upcoming    { background:#e0e7ff; color:#3730a3; }
+
+  .plate-tag {
+    background:#0f172a; color:#fff; border-radius:6px;
+    padding:2px 9px; font-size:.75rem; font-weight:800;
+    letter-spacing:.1em; display:inline-block;
+  }
+  .empty-state { text-align:center; padding:28px; color:var(--text-muted); font-size:.86rem; }
+  .empty-state .ei { font-size:2rem; margin-bottom:8px; }
+  .overdue-banner {
+    background:#fef2f2; border:1px solid #fecaca; border-radius:9px;
+    padding:10px 14px; display:flex; align-items:center; gap:10px;
+    font-size:.86rem; color:#991b1b; font-weight:600; margin-bottom:14px;
+  }
+</style>
+
+
+<div class="page-title">🔧 My Maintenance</div>
+<div class="page-sub">Scheduled services and repair records for your vehicle</div>
+
+{% if not schedules and not repairs %}
+  <div class="empty-state" style="margin-top:40px;">
+    <div class="ei">🚗</div>
+    No maintenance records found for your vehicle.
+  </div>
+{% else %}
+
+<div class="row g-4">
+
+  <!-- Schedules -->
+  <div class="col-md-6">
+    <div class="section-card">
+      <div class="card-head">📅 Maintenance Schedule</div>
+      <div class="card-body-inner">
+        {% if schedules %}
+          {% for s in schedules %}
+          <div class="srow">
+            <div class="srow-icon">
+              {% if s.completed %}✅{% elif s.service_date < today %}⚠️{% else %}🛠️{% endif %}
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight:600;color:var(--text-main);">{{ s.description }}</div>
+              <div class="srow-date">{{ s.service_date|date:"M d, Y" }}</div>
+            </div>
+            <span class="badge-s
+              {% if s.completed %}bs-completed
+              {% elif s.service_date < today %}bs-overdue
+              {% else %}bs-upcoming{% endif %}">
+              {% if s.completed %}Done{% elif s.service_date < today %}Overdue{% else %}Upcoming{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state"><div class="ei">📅</div>No scheduled services.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Repair logs -->
+  <div class="col-md-6">
+    <div class="section-card">
+      <div class="card-head">🔩 Repair History</div>
+      <div class="card-body-inner">
+        {% if repairs %}
+          {% for r in repairs %}
+          <div class="srow">
+            <div class="srow-icon">🔧</div>
+            <div style="flex:1;">
+              <div style="font-weight:600;color:var(--text-main);">{{ r.get_category_display }}</div>
+              <div style="font-size:.82rem;color:var(--text-muted);margin-top:1px;">{{ r.issue|truncatechars:60 }}</div>
+              <div class="srow-date">
+                {% if r.mechanic %}👨‍🔧 {{ r.mechanic }} &nbsp;·&nbsp;{% endif %}
+                {{ r.repaired_on|date:"M d, Y"|default:"Date TBD" }}
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <span class="badge-s bs-{{ r.progress|lower }}">{{ r.get_progress_display }}</span>
+              <div style="font-size:.78rem;font-weight:700;color:var(--text-main);margin-top:4px;">
+                KES {{ r.cost|floatformat:0 }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state"><div class="ei">🔩</div>No repair records yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endif %}
+
+{% endblock %}

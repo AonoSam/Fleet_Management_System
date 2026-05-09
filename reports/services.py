@@ -1,6 +1,6 @@
 from django.db.models import Sum
 from payments.models import Payment
-from maintainance.models import RepairLog
+from maintenance.models import RepairLog
 from accounts.models import User
 from loans.models import Loan
 

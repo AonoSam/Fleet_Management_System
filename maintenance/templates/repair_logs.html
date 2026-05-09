@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --radius: 12px;
+    --border: #e2e8f0;
+    --surface: #fff;
+    --surface-2: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+  }
+
+  .page-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+  .page-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0; }
+  .page-sub   { font-size: .85rem; color: var(--text-muted); margin-top: 2px; }
+
+  .filter-bar {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 20px;
+    box-shadow: var(--shadow-sm); margin-bottom: 20px;
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+  }
+  .filter-bar select {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; font-size: .84rem; color: var(--text-main);
+    background: var(--surface-2); min-width: 160px;
+  }
+
+  .stat-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
+    gap: 12px; margin-bottom: 20px;
+  }
+  .strip-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .strip-val   { font-size: 1.4rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+  .strip-label { font-size: .73rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+
+  .repairs-table-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden;
+  }
+  .table-head-bar {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2); font-weight: 700; font-size: .8rem;
+    text-transform: uppercase; letter-spacing: .07em; color: var(--text-main);
+  }
+  table.rt { width: 100%; border-collapse: collapse; font-size: .86rem; }
+  table.rt th {
+    padding: 11px 16px; background: var(--surface-2);
+    border-bottom: 1px solid var(--border); font-size: .75rem;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted); font-weight: 600; text-align: left;
+  }
+  table.rt td {
+    padding: 13px 16px; border-bottom: 1px solid var(--border);
+    vertical-align: middle; color: var(--text-main);
+  }
+  table.rt tr:last-child td { border-bottom: none; }
+  table.rt tr:hover td { background: var(--surface-2); }
+
+  .plate-tag {
+    background: #0f172a; color: #fff; border-radius: 6px;
+    padding: 3px 10px; font-size: .78rem; font-weight: 800;
+    letter-spacing: .1em; display: inline-block;
+  }
+  .badge-s {
+    display: inline-block; padding: 3px 10px; border-radius: 99px;
+    font-size: .71rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  /* category */
+  .bc-engine       { background:#fee2e2; color:#991b1b; }
+  .bc-transmission { background:#fef3c7; color:#92400e; }
+  .bc-brakes       { background:#fde8d8; color:#9a3412; }
+  .bc-tyres        { background:#e0e7ff; color:#3730a3; }
+  .bc-electrical   { background:#fef9c3; color:#713f12; }
+  .bc-body         { background:#dbeafe; color:#1e40af; }
+  .bc-suspension   { background:#ede9fe; color:#5b21b6; }
+  .bc-fuel_system  { background:#d1fae5; color:#065f46; }
+  .bc-cooling      { background:#cffafe; color:#164e63; }
+  .bc-general      { background:#f1f5f9; color:#334155; }
+  .bc-other        { background:#f1f5f9; color:#334155; }
+  /* progress */
+  .bp-pending     { background:#fef3c7; color:#92400e; }
+  .bp-in_progress { background:#dbeafe; color:#1e40af; }
+  .bp-completed   { background:#d1fae5; color:#065f46; }
+  .bp-on_hold     { background:#fee2e2; color:#991b1b; }
+
+  .action-btn {
+    padding: 5px 10px; border-radius: 7px; font-size: .75rem;
+    font-weight: 600; text-decoration: none; display: inline-block;
+    transition: opacity .15s;
+  }
+  .action-btn:hover { opacity: .8; }
+  .btn-view   { background: #eff6ff; color: #1d4ed8; }
+  .btn-edit   { background: #fef3c7; color: #92400e; }
+  .btn-delete { background: #fee2e2; color: #991b1b; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .empty-state .ei { font-size: 2.5rem; margin-bottom: 10px; }
+</style>
+
+
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <div class="page-title">🔧 Repair Logs</div>
+    <div class="page-sub">All vehicle repair and maintenance records</div>
+  </div>
+  <a href="{% url 'add_repair' %}" class="btn btn-primary btn-sm">+ Add Repair Log</a>
+</div>
+
+
+<!-- Summary strip -->
+<div class="stat-strip">
+  <div class="strip-card">
+    <div class="strip-val">{{ repairs|length }}</div>
+    <div class="strip-label">Total Records</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-val">{{ repairs|length }}</div>
+    <div class="strip-label">Showing</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-val" style="color:#1d4ed8;">
+      {{ repairs|dictsort:"progress"|length }}
+    </div>
+    <div class="strip-label">In Progress</div>
+  </div>
+</div>
+
+
+<!-- Filters -->
+<form method="GET" class="filter-bar">
+  <div>
+    <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px;font-weight:600;">Vehicle</div>
+    <select name="vehicle" onchange="this.form.submit()">
+      <option value="">All Vehicles</option>
+      {% for v in vehicles %}
+        <option value="{{ v.id }}" {% if selected_vehicle == v.id|stringformat:"s" %}selected{% endif %}>
+          {{ v.number_plate }} — {{ v.model }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px;font-weight:600;">Category</div>
+    <select name="category" onchange="this.form.submit()">
+      <option value="">All Categories</option>
+      {% for val, label in category_choices %}
+        <option value="{{ val }}" {% if selected_category == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px;font-weight:600;">Progress</div>
+    <select name="progress" onchange="this.form.submit()">
+      <option value="">All Statuses</option>
+      {% for val, label in progress_choices %}
+        <option value="{{ val }}" {% if selected_progress == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  {% if selected_vehicle or selected_category or selected_progress %}
+  <div style="align-self:flex-end;">
+    <a href="{% url 'repair_logs' %}" class="btn btn-sm btn-outline-secondary">Clear Filters</a>
+  </div>
+  {% endif %}
+</form>
+
+
+<!-- Table -->
+<div class="repairs-table-wrap">
+  <div class="table-head-bar">Repair Records</div>
+  {% if repairs %}
+  <table class="rt">
+    <thead>
+      <tr>
+        <th>Vehicle</th>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Mechanic</th>
+        <th>Cost (KES)</th>
+        <th>Date</th>
+        <th>Progress</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in repairs %}
+      <tr>
+        <td>
+          <span class="plate-tag">{{ r.vehicle.number_plate }}</span>
+          <div style="font-size:.76rem;color:var(--text-muted);margin-top:3px;">{{ r.vehicle.model }}</div>
+        </td>
+        <td>
+          <span class="badge-s bc-{{ r.category|lower }}">
+            {{ r.get_category_display }}
+          </span>
+        </td>
+        <td style="max-width:200px;">
+          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ r.issue }}">
+            {{ r.issue }}
+          </div>
+        </td>
+        <td>{{ r.mechanic|default:"—" }}</td>
+        <td style="font-weight:700;">{{ r.cost|floatformat:2 }}</td>
+        <td style="color:var(--text-muted);">
+          {{ r.repaired_on|date:"M d, Y"|default:"—" }}
+        </td>
+        <td>
+          <span class="badge-s bp-{{ r.progress|lower }}">
+            {{ r.get_progress_display }}
+          </span>
+        </td>
+        <td>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <a href="{% url 'repair_detail' r.pk %}" class="action-btn btn-view">View</a>
+            <a href="{% url 'edit_repair' r.pk %}" class="action-btn btn-edit">Edit</a>
+            <a href="{% url 'delete_repair' r.pk %}" class="action-btn btn-delete">Delete</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty-state">
+    <div class="ei">🔧</div>
+    No repair logs found.
+    <div style="margin-top:10px;">
+      <a href="{% url 'add_repair' %}" class="btn btn-primary btn-sm">Add First Repair Log</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

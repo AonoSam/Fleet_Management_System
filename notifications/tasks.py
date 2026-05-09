@@ -1,5 +1,5 @@
 from django.utils import timezone
-from maintainance.models import MaintenanceSchedule
+from maintenance.models import MaintenanceSchedule
 from .services import create_notification
 
 

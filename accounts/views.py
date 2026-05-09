@@ -12,7 +12,7 @@ from payments.models import Payment
 from loans.models import Loan
 from drivers.models import Driver
 from vehicles.models import Vehicle
-from maintainance.models import MaintenanceSchedule
+from maintenance.models import MaintenanceSchedule
 
 
 def login_view(request):

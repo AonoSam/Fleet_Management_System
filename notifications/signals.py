@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from payments.models import Payment
-from maintainance.models import MaintenanceSchedule
+from maintenance.models import MaintenanceSchedule
 from loans.models import Loan
 from accounts.models import User
 
