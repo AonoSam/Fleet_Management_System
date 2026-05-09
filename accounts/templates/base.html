@@ -123,7 +123,7 @@
                                     {% for n in notifications|slice:":5" %}
                                         <li class="mb-2">
 
-                                            <div style="{% if not n.is_read %}font-weight:600;{% endif %}">
+                                            <div{% if not n.is_read %} style="font-weight:600;"{% endif %}>
                                                 <small>{{ n.message }}</small>
                                             </div>
 
