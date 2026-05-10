@@ -1,8 +1,358 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<h2>Admin Dashboard</h2>
-<a href="{% url 'user_list' %}">Manage Users</a>
+<style>
+  :root {
+    --radius: 12px;
+    --border: #e2e8f0;
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+  }
+
+  .dash-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    border-radius: var(--radius); padding: 26px 32px;
+    color: #fff; margin-bottom: 28px;
+    position: relative; overflow: hidden;
+  }
+  .dash-header::after {
+    content:''; position:absolute; right:-40px; top:-40px;
+    width:220px; height:220px; border-radius:50%;
+    background:rgba(255,255,255,.05);
+  }
+  .dash-header h4 { font-size:1.5rem; font-weight:800; margin:0; letter-spacing:-.02em; }
+  .dash-header p  { opacity:.72; font-size:.88rem; margin:4px 0 0; }
+
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .2s, transform .2s; height: 100%;
+    text-decoration: none; display: block; color: inherit;
+  }
+  .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); color: inherit; }
+  .stat-icon {
+    width: 44px; height: 44px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; margin-bottom: 14px;
+  }
+  .si-blue   { background: #dbeafe; }
+  .si-green  { background: #d1fae5; }
+  .si-amber  { background: #fef3c7; }
+  .si-purple { background: #ede9fe; }
+  .si-red    { background: #fee2e2; }
+  .si-teal   { background: #ccfbf1; }
+  .si-indigo { background: #e0e7ff; }
+  .si-orange { background: #ffedd5; }
+
+  .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text-main); letter-spacing:-.03em; line-height:1; }
+  .stat-label { font-size: .75rem; color: var(--text-muted); margin-top: 4px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; }
+  .stat-sub   { font-size: .76rem; color: var(--text-muted); margin-top: 6px; }
+
+  .section-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden;
+  }
+  .card-head {
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface-2);
+  }
+  .card-head h6 {
+    font-weight: 700; font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--text-main); margin: 0;
+  }
+  .card-body-inner { padding: 18px 20px; }
+
+  .alert-banner {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px; border-radius: 9px;
+    font-size: .86rem; font-weight: 600; margin-bottom: 12px;
+  }
+  .ab-red   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+  .ab-amber { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+
+  .pay-table { width: 100%; font-size: .84rem; border-collapse: collapse; }
+  .pay-table th {
+    font-size: .71rem; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--text-muted); font-weight: 600; padding: 0 6px 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .pay-table td { padding: 10px 6px 10px 0; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .pay-table tr:last-child td { border-bottom: none; }
+  .pay-table tr:hover td { background: var(--surface-2); }
+
+  .badge-s {
+    display: inline-block; padding: 3px 10px; border-radius: 99px;
+    font-size: .71rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .bs-success     { background: #d1fae5; color: #065f46; }
+  .bs-pending     { background: #fef3c7; color: #92400e; }
+  .bs-failed      { background: #fee2e2; color: #991b1b; }
+  .bs-in_progress { background: #dbeafe; color: #1e40af; }
+  .bs-completed   { background: #d1fae5; color: #065f46; }
+  .bs-on_hold     { background: #fee2e2; color: #991b1b; }
+
+  .plate-tag {
+    background: #0f172a; color: #fff; border-radius: 6px;
+    padding: 2px 9px; font-size: .76rem; font-weight: 800;
+    letter-spacing: .1em; display: inline-block;
+  }
+
+  .mrow {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--border); font-size: .86rem;
+  }
+  .mrow:last-child { border-bottom: none; }
+
+  .empty-state { text-align: center; padding: 24px; color: var(--text-muted); font-size: .86rem; }
+  .empty-state .ei { font-size: 2rem; margin-bottom: 8px; }
+
+  .section-label {
+    font-size: .72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; color: var(--text-muted); margin: 24px 0 12px;
+  }
+</style>
+
+
+<!-- HEADER -->
+<div class="dash-header">
+  <div style="position:relative;z-index:1;">
+    <h4>Admin Dashboard 👋</h4>
+    <p>Welcome back, {{ request.user.get_full_name|default:request.user.username }}. Here's what's happening today.</p>
+  </div>
+</div>
+
+
+<!-- ALERTS -->
+{% if overdue_schedules > 0 %}
+<div class="alert-banner ab-red">
+  ⚠️ {{ overdue_schedules }} overdue maintenance schedule{{ overdue_schedules|pluralize }} —
+  <a href="{% url 'schedule_list' %}" style="color:inherit;margin-left:4px;">View →</a>
+</div>
+{% endif %}
+
+{% if pending_loans > 0 %}
+<div class="alert-banner ab-amber">
+  🏦 {{ pending_loans }} loan request{{ pending_loans|pluralize }} awaiting approval —
+  <a href="{% url 'loan_list' %}" style="color:inherit;margin-left:4px;">Review →</a>
+</div>
+{% endif %}
+
+
+<!-- STAT CARDS ROW 1: Fleet & People -->
+<div class="section-label">Fleet & People</div>
+<div class="row g-3 mb-2">
+
+  <div class="col-6 col-md-3">
+    <a href="{% url 'vehicle_list' %}" class="stat-card">
+      <div class="stat-icon si-blue">🚗</div>
+      <div class="stat-value">{{ total_vehicles }}</div>
+      <div class="stat-label">Total Vehicles</div>
+      <div class="stat-sub">{{ active_vehicles }} active · {{ under_maintenance_vehicles }} in service</div>
+    </a>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <a href="{% url 'driver_list' %}" class="stat-card">
+      <div class="stat-icon si-purple">👨‍✈️</div>
+      <div class="stat-value">{{ total_drivers }}</div>
+      <div class="stat-label">Total Drivers</div>
+      <div class="stat-sub">Registered in system</div>
+    </a>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <a href="{% url 'schedule_list' %}" class="stat-card">
+      <div class="stat-icon {% if overdue_schedules > 0 %}si-red{% else %}si-teal{% endif %}">🔧</div>
+      <div class="stat-value">{{ overdue_schedules }}</div>
+      <div class="stat-label">Overdue Services</div>
+      <div class="stat-sub">{{ repairs_in_progress }} repair{{ repairs_in_progress|pluralize }} in progress</div>
+    </a>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <a href="{% url 'loan_list' %}" class="stat-card">
+      <div class="stat-icon {% if pending_loans > 0 %}si-amber{% else %}si-indigo{% endif %}">🏦</div>
+      <div class="stat-value">{{ active_loans }}</div>
+      <div class="stat-label">Active Loans</div>
+      <div class="stat-sub">{{ pending_loans }} pending approval</div>
+    </a>
+  </div>
+
+</div>
+
+
+<!-- STAT CARDS ROW 2: Finance -->
+<div class="section-label">Finance</div>
+<div class="row g-3 mb-4">
+
+  <div class="col-6 col-md-3">
+    <a href="{% url 'admin_payment_list' %}" class="stat-card">
+      <div class="stat-icon si-green">💰</div>
+      <div class="stat-value" style="font-size:1.2rem;">KES {{ total_collections|floatformat:2 }}</div>
+      <div class="stat-label">Total Collections</div>
+      <div class="stat-sub">KES {{ monthly_collections|floatformat:2 }} this month</div>
+    </a>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <a href="{% url 'loan_list' %}" class="stat-card">
+      <div class="stat-icon si-orange">📋</div>
+      <div class="stat-value" style="font-size:1.2rem;">KES {{ total_loan_amount|floatformat:2 }}</div>
+      <div class="stat-label">Total Loan Portfolio</div>
+      <div class="stat-sub">Excluding rejected loans</div>
+    </a>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <a href="{% url 'cost_report' %}" class="stat-card">
+      <div class="stat-icon si-red">📊</div>
+      <div class="stat-value">Reports</div>
+      <div class="stat-label">Cost Report</div>
+      <div class="stat-sub">View full cost breakdown</div>
+    </a>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <a href="{% url 'performance_report' %}" class="stat-card">
+      <div class="stat-icon si-teal">⭐</div>
+      <div class="stat-value">Performance</div>
+      <div class="stat-label">Driver Report</div>
+      <div class="stat-sub">View driver rankings</div>
+    </a>
+  </div>
+
+</div>
+
+
+<!-- MAIN GRID -->
+<div class="row g-4">
+
+  <!-- LEFT: Recent Payments + Recent Repairs -->
+  <div class="col-md-8 d-flex flex-column gap-4">
+
+    <!-- Recent Payments -->
+    <div class="section-card">
+      <div class="card-head">
+        <h6>💳 Recent Payments</h6>
+        <a href="{% url 'admin_payment_list' %}" class="btn btn-sm btn-outline-primary" style="font-size:.72rem;">View All →</a>
+      </div>
+      <div class="card-body-inner">
+        {% if recent_payments %}
+        <table class="pay-table">
+          <thead>
+            <tr>
+              <th>Driver</th>
+              <th>Amount</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in recent_payments %}
+            <tr>
+              <td style="font-weight:600;">{{ p.driver.username|default:"—" }}</td>
+              <td style="font-weight:700;">KES {{ p.amount|floatformat:2 }}</td>
+              <td>{{ p.get_payment_type_display }}</td>
+              <td>
+                <span class="badge-s
+                  {% if p.status == 'SUCCESS' %}bs-success
+                  {% elif p.status == 'FAILED' %}bs-failed
+                  {% else %}bs-pending{% endif %}">
+                  {{ p.status }}
+                </span>
+              </td>
+              <td style="color:var(--text-muted);">{{ p.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div class="empty-state"><div class="ei">📭</div>No payments recorded yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Recent Repairs -->
+    <div class="section-card">
+      <div class="card-head">
+        <h6>🔧 Recent Repair Logs</h6>
+        <a href="{% url 'repair_logs' %}" class="btn btn-sm btn-outline-primary" style="font-size:.72rem;">View All →</a>
+      </div>
+      <div class="card-body-inner">
+        {% if recent_repairs %}
+        <table class="pay-table">
+          <thead>
+            <tr>
+              <th>Vehicle</th>
+              <th>Category</th>
+              <th>Mechanic</th>
+              <th>Cost</th>
+              <th>Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in recent_repairs %}
+            <tr>
+              <td><span class="plate-tag">{{ r.vehicle.number_plate }}</span></td>
+              <td>{{ r.get_category_display }}</td>
+              <td style="color:var(--text-muted);">{{ r.mechanic|default:"—" }}</td>
+              <td style="font-weight:700;">KES {{ r.cost|floatformat:2 }}</td>
+              <td>
+                <span class="badge-s bs-{{ r.progress|lower }}">
+                  {{ r.get_progress_display }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          <div class="empty-state"><div class="ei">🔩</div>No repair logs yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Upcoming Maintenance -->
+  <div class="col-md-4">
+    <div class="section-card">
+      <div class="card-head">
+        <h6>📅 Upcoming Services</h6>
+        <a href="{% url 'schedule_list' %}" class="btn btn-sm btn-outline-warning" style="font-size:.72rem;">All →</a>
+      </div>
+      <div class="card-body-inner">
+        {% if upcoming_schedules %}
+          {% for s in upcoming_schedules %}
+          <div class="mrow">
+            <div style="font-size:1.2rem;">🛠️</div>
+            <div style="flex:1;">
+              <div style="font-weight:600;font-size:.85rem;color:var(--text-main);">
+                {{ s.vehicle.number_plate }}
+              </div>
+              <div style="font-size:.76rem;color:var(--text-muted);">
+                {{ s.description|truncatechars:40 }}
+              </div>
+            </div>
+            <div style="font-size:.75rem;color:var(--text-muted);white-space:nowrap;">
+              {{ s.service_date|date:"M d" }}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state"><div class="ei">✅</div>No upcoming services.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
 
 {% endblock %}

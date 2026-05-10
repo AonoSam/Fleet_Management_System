@@ -10,7 +10,7 @@
     <div class="col-md-3 mb-3">
         <div class="card p-3 shadow-sm">
             <h6 class="text-muted">Total Income</h6>
-            <h3 class="text-success">KSh {{ total_income }}</h3>
+            <h3 class="text-success">KSh {{ total_income|floatformat:2 }}</h3>
         </div>
     </div>
 
@@ -18,7 +18,7 @@
     <div class="col-md-3 mb-3">
         <div class="card p-3 shadow-sm">
             <h6 class="text-muted">Total Expenses</h6>
-            <h3 class="text-danger">KSh {{ total_expenses }}</h3>
+            <h3 class="text-danger">KSh {{ total_expenses|floatformat:2 }}</h3>
         </div>
     </div>
 
@@ -26,7 +26,7 @@
     <div class="col-md-3 mb-3">
         <div class="card p-3 shadow-sm">
             <h6 class="text-muted">Net Profit</h6>
-            <h3 class="text-primary">KSh {{ net_profit }}</h3>
+            <h3 class="text-primary">KSh {{ net_profit|floatformat:2 }}</h3>
         </div>
     </div>
 
@@ -47,7 +47,7 @@
     <div class="col-md-3 mb-3">
         <div class="card p-3 shadow-sm">
             <h6 class="text-muted">Total Loans</h6>
-            <h3>KSh {{ total_loan_amount }}</h3>
+            <h3>KSh {{ total_loan_amount|floatformat:2 }}</h3>
         </div>
     </div>
 
@@ -75,20 +75,20 @@
 </div>
 
 
-<!-- 🔥 LOAN FINANCIAL BREAKDOWN (NEW - IMPORTANT FIX) -->
+<!-- 🔥 LOAN FINANCIAL BREAKDOWN -->
 <div class="row mt-4">
 
     <div class="col-md-6 mb-3">
         <div class="card p-3 shadow-sm">
             <h6 class="text-muted">Driver Loan Interest (Income)</h6>
-            <h3 class="text-success">KSh {{ driver_interest_income }}</h3>
+            <h3 class="text-success">KSh {{ driver_interest_income|floatformat:2 }}</h3>
         </div>
     </div>
 
     <div class="col-md-6 mb-3">
         <div class="card p-3 shadow-sm">
             <h6 class="text-muted">Bank Loan Interest (Expense)</h6>
-            <h3 class="text-danger">KSh {{ bank_interest_expense }}</h3>
+            <h3 class="text-danger">KSh {{ bank_interest_expense|floatformat:2 }}</h3>
         </div>
     </div>
 
