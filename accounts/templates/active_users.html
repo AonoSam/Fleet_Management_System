@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --radius: 12px; --border: #e2e8f0; --surface: #fff;
+    --surface-2: #f8fafc; --text-main: #0f172a; --text-muted: #64748b;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08); --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+  }
+
+  .page-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+  .page-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0; }
+  .page-sub   { font-size: .85rem; color: var(--text-muted); margin-top: 2px; }
+
+  .stat-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+    gap: 12px; margin-bottom: 24px;
+  }
+  .strip-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow-sm);
+  }
+  .strip-val   { font-size: 1.6rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+  .strip-label { font-size: .73rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+
+  .section-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; margin-bottom: 24px;
+  }
+  .card-head {
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface-2);
+  }
+  .card-head h6 {
+    font-weight: 700; font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--text-main); margin: 0;
+  }
+
+  table.st { width: 100%; border-collapse: collapse; font-size: .86rem; }
+  table.st th {
+    padding: 11px 16px; background: var(--surface-2);
+    border-bottom: 1px solid var(--border); font-size: .74rem;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted); font-weight: 600; text-align: left;
+  }
+  table.st td {
+    padding: 13px 16px; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  table.st tr:last-child td { border-bottom: none; }
+  table.st tr:hover td { background: var(--surface-2); }
+
+  .avatar-sm {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .av-admin  { background: #1e3a8a; }
+  .av-driver { background: #0891b2; }
+
+  .badge-s {
+    display: inline-block; padding: 3px 10px; border-radius: 99px;
+    font-size: .71rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .bs-online  { background: #d1fae5; color: #065f46; }
+  .bs-offline { background: #f1f5f9; color: #64748b; }
+  .bs-admin   { background: #dbeafe; color: #1e40af; }
+  .bs-driver  { background: #ede9fe; color: #5b21b6; }
+
+  .live-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #10b981; margin-right: 6px;
+    animation: blink 1.5s infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .3; }
+  }
+
+  .empty-state { text-align: center; padding: 32px; color: var(--text-muted); font-size: .86rem; }
+  .empty-state .ei { font-size: 2rem; margin-bottom: 8px; }
+
+  .ua-text {
+    max-width: 220px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    font-size: .76rem; color: var(--text-muted);
+  }
+</style>
+
+
+<!-- Header -->
+<div class="page-header">
+  <div>
+    <div class="page-title">👥 User Sessions</div>
+    <div class="page-sub">Monitor who is logged in and recent activity</div>
+  </div>
+  <span style="font-size:.82rem;color:var(--text-muted);">
+    Auto-refreshes every 60 seconds
+  </span>
+</div>
+
+
+<!-- Stats -->
+<div class="stat-strip">
+  <div class="strip-card">
+    <div class="strip-val" style="color:#10b981;">{{ active_count }}</div>
+    <div class="strip-label">Currently Online</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-val">{{ recent_sessions|length }}</div>
+    <div class="strip-label">Sessions (Last 24h)</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-val">
+      {{ recent_sessions|length|add:"-"|add:active_count|default:0 }}
+    </div>
+    <div class="strip-label">Logged Out Today</div>
+  </div>
+</div>
+
+
+<!-- Currently Active -->
+<div class="section-card">
+  <div class="card-head">
+    <h6><span class="live-dot"></span>Currently Logged In</h6>
+    <span style="font-size:.76rem;color:var(--text-muted);">{{ active_count }} active session{{ active_count|pluralize }}</span>
+  </div>
+
+  {% if active_sessions %}
+  <table class="st">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Role</th>
+        <th>Login Time</th>
+        <th>Duration</th>
+        <th>IP Address</th>
+        <th>Browser / Device</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in active_sessions %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="avatar-sm {% if s.user.role == 'ADMIN' %}av-admin{% else %}av-driver{% endif %}">
+              {{ s.user.username|first|upper }}
+            </div>
+            <div>
+              <div style="font-weight:700;">{{ s.user.username }}</div>
+              <div style="font-size:.76rem;color:var(--text-muted);">{{ s.user.get_full_name }}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="badge-s {% if s.user.role == 'ADMIN' %}bs-admin{% else %}bs-driver{% endif %}">
+            {{ s.user.role }}
+          </span>
+        </td>
+        <td style="color:var(--text-muted);">
+          {{ s.login_time|date:"M d, Y" }}<br>
+          <span style="font-size:.78rem;">{{ s.login_time|date:"H:i:s" }}</span>
+        </td>
+        <td style="font-weight:600;">{{ s.duration }}</td>
+        <td style="font-family:monospace;font-size:.82rem;">
+          {{ s.ip_address|default:"—" }}
+        </td>
+        <td>
+          <div class="ua-text" title="{{ s.user_agent }}">
+            {{ s.user_agent|default:"—" }}
+          </div>
+        </td>
+        <td>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span class="badge-s bs-online">● Online</span>
+    {% if s.user != request.user %}
+    <form method="POST" action="{% url 'force_logout_user' s.user.pk %}"
+          onsubmit="return confirm('Force logout {{ s.user.username }}?')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-danger" style="font-size:.72rem;padding:3px 10px;">
+        Logout
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty-state"><div class="ei">👤</div>No users currently logged in.</div>
+  {% endif %}
+</div>
+
+
+<!-- Recent Sessions (last 24h) -->
+<div class="section-card">
+  <div class="card-head">
+    <h6>🕐 Recent Sessions — Last 24 Hours</h6>
+    <span style="font-size:.76rem;color:var(--text-muted);">{{ recent_sessions|length }} total</span>
+  </div>
+
+  {% if recent_sessions %}
+  <table class="st">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Role</th>
+        <th>Login Time</th>
+        <th>Logout Time</th>
+        <th>Duration</th>
+        <th>IP Address</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in recent_sessions %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="avatar-sm {% if s.user.role == 'ADMIN' %}av-admin{% else %}av-driver{% endif %}">
+              {{ s.user.username|first|upper }}
+            </div>
+            <div style="font-weight:600;">{{ s.user.username }}</div>
+          </div>
+        </td>
+        <td>
+          <span class="badge-s {% if s.user.role == 'ADMIN' %}bs-admin{% else %}bs-driver{% endif %}">
+            {{ s.user.role }}
+          </span>
+        </td>
+        <td style="color:var(--text-muted);">
+          {{ s.login_time|date:"M d, H:i" }}
+        </td>
+        <td style="color:var(--text-muted);">
+          {% if s.logout_time %}{{ s.logout_time|date:"M d, H:i" }}{% else %}—{% endif %}
+        </td>
+        <td style="font-weight:600;">{{ s.duration }}</td>
+        <td style="font-family:monospace;font-size:.82rem;">
+          {{ s.ip_address|default:"—" }}
+        </td>
+        <td>
+          {% if s.is_active %}
+            <span class="badge-s bs-online">● Online</span>
+          {% else %}
+            <span class="badge-s bs-offline">Offline</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty-state"><div class="ei">📋</div>No sessions in the last 24 hours.</div>
+  {% endif %}
+</div>
+
+
+<!-- Auto refresh every 60 seconds -->
+<script>
+  setTimeout(() => window.location.reload(), 60000);
+</script>
+
+{% endblock %}

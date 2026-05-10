@@ -36,6 +36,7 @@
                     <li class="mt-2 text-secondary small">Management</li>
 
                     <li><a class="nav-link text-white" href="{% url 'user_list' %}">Users</a></li>
+                    <li><a class="nav-link text-white" href="{% url 'active_users' %}">👥 Active Users</a></li>
                     <li><a class="nav-link text-white" href="{% url 'vehicle_list' %}">Vehicles</a></li>
                     <li><a class="nav-link text-white" href="{% url 'driver_list' %}">Drivers</a></li>
                     <li><a class="nav-link text-white" href="{% url 'admin_payment_list' %}">Payments</a></li>
@@ -227,6 +228,26 @@
         })
         .catch(err => console.error('Clear notifications failed:', err));
     }
+</script>
+
+<script>
+  // Auto logout after 5 minutes of inactivity on the client side
+  let inactivityTimer;
+
+  function resetTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      window.location.href = "{% url 'logout' %}";
+    }, 300000); // 5 minutes in milliseconds
+  }
+
+  // Reset timer on any user activity
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(event => {
+    document.addEventListener(event, resetTimer);
+  });
+
+  // Start the timer on page load
+  resetTimer();
 </script>
 
 </body>

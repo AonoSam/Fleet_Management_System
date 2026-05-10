@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.db.models import Sum
 from django.utils import timezone
@@ -13,6 +13,66 @@ from loans.models import Loan
 from drivers.models import Driver
 from vehicles.models import Vehicle
 from maintenance.models import MaintenanceSchedule, RepairLog
+from .models import User, UserSession
+from django.contrib.sessions.models import Session
+from django.utils import timezone
+
+#========================
+# Landing Page
+#========================
+def landing(request):
+    # Redirect already-logged-in users straight to their dashboard
+    if request.user.is_authenticated:
+        if request.user.role == 'ADMIN':
+            return redirect('admin_dashboard')
+        return redirect('driver_dashboard')
+    return render(request, 'landing.html')
+
+
+# ── Add this view to accounts/views.py ──────────────────────────
+# Also add this import at the top if not already there:
+# from .models import User, UserSession
+
+@admin_required
+def active_users(request):
+    # Currently logged-in sessions
+    active_sessions = UserSession.objects.filter(
+        is_active=True
+    ).select_related('user').order_by('-login_time')
+
+    # Recent sessions from last 24 hours (including logged out)
+    from django.utils import timezone
+    from datetime import timedelta
+    since = timezone.now() - timedelta(hours=24)
+    recent_sessions = UserSession.objects.filter(
+        login_time__gte=since
+    ).select_related('user').order_by('-login_time')
+
+    return render(request, 'active_users.html', {
+        'active_sessions': active_sessions,
+        'recent_sessions': recent_sessions,
+        'active_count':    active_sessions.count(),
+    })
+    
+
+@admin_required
+def force_logout_user(request, pk):
+    if request.method == 'POST':
+        target_user = get_object_or_404(User, pk=pk)
+
+        # Mark their session as inactive
+        UserSession.objects.filter(
+            user=target_user, is_active=True
+        ).update(is_active=False, logout_time=timezone.now())
+
+        # Delete all their Django sessions from the database
+        all_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+        for session in all_sessions:
+            data = session.get_decoded()
+            if data.get('_auth_user_id') == str(target_user.pk):
+                session.delete()
+
+    return redirect('active_users')    
 
 
 def login_view(request):
@@ -182,3 +242,4 @@ def driver_dashboard(request):
         'overdue_maintenance':  overdue_maintenance,
         'overdue_count':        len(overdue_maintenance),
     })
+    

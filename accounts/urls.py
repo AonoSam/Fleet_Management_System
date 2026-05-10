@@ -10,4 +10,7 @@ urlpatterns = [
 
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('driver-dashboard/', views.driver_dashboard, name='driver_dashboard'),
+    path('active-users/', views.active_users, name='active_users'),
+    path('force-logout/<int:pk>/', views.force_logout_user, name='force_logout_user'),
+    
 ]

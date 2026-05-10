@@ -106,3 +106,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
+
+
+
+
+
+# ── Auto logout after 5 minutes of inactivity ──
+SESSION_COOKIE_AGE = 300              # 5 minutes in seconds
+SESSION_SAVE_EVERY_REQUEST = True     # reset timer on every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # also logout when browser closes
