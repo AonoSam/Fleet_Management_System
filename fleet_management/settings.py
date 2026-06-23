@@ -10,7 +10,11 @@ SECRET_KEY = 'django-insecure-f2c3$5tc4%4wb65+xf!(fjg=lwzq7%-j_(3#(+65g2xz9ky)ua
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'repose-catfish-starlet.ngrok-free.dev',
+]
 
 
 INSTALLED_APPS = [
@@ -87,8 +91,13 @@ TIME_ZONE = 'Africa/Nairobi'   # ✅ FIXED (important for real system)
 USE_I18N = True
 USE_TZ = True
 
+# Static files (CSS, JavaScript, Images)
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 AUTH_USER_MODEL = 'accounts.User'
 

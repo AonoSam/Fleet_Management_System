@@ -1,91 +1,438 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<h2 class="mb-3">Notifications</h2>
+<style>
+  :root {
+    --radius: 12px; --border: #e2e8f0; --surface: #fff;
+    --surface-2: #f8fafc; --text-main: #0f172a; --text-muted: #64748b;
+    --blue: #1E3A8A; --orange: #F97316;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+  }
 
-<!-- 🔥 CLEAR ALL BUTTON -->
-<form method="POST" action="{% url 'mark_all_read' %}" class="mb-3">
-    {% csrf_token %}
-    <button class="btn btn-danger btn-sm">
-        Clear All (Mark as Read)
+  /* ── Page header ── */
+  .page-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+  }
+  .page-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0; }
+  .page-sub   { font-size: .85rem; color: var(--text-muted); margin-top: 3px; }
+
+  /* ── Stat strip ── */
+  .stat-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px; margin-bottom: 24px;
+  }
+  .strip-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm);
+  }
+  .strip-val   { font-size: 1.6rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+  .strip-label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 18px;
+    margin-bottom: 16px; box-shadow: var(--shadow-sm);
+  }
+  .toolbar-left  { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .toolbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .sel-info {
+    font-size: .82rem; color: var(--text-muted); font-weight: 500;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 99px; padding: 4px 12px;
+    display: none;
+  }
+  .sel-info.visible { display: inline-block; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 14px; border-radius: 8px; border: none;
+    font-size: .82rem; font-weight: 600; cursor: pointer;
+    text-decoration: none; transition: opacity .15s, transform .15s;
+    white-space: nowrap;
+  }
+  .btn:hover { opacity: .85; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-danger    { background: #ef4444; color: #fff; }
+  .btn-warning   { background: #f59e0b; color: #fff; }
+  .btn-secondary { background: var(--surface-2); color: var(--text-main); border: 1px solid var(--border); }
+  .btn-outline-danger { background: transparent; color: #ef4444; border: 1.5px solid #ef4444; }
+  .btn-sm { padding: 5px 11px; font-size: .78rem; }
+
+  .btn-sel-delete {
+    display: none;
+    background: #fee2e2; color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+  .btn-sel-delete.visible { display: inline-flex; }
+
+  /* ── Table card ── */
+  .table-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden;
+  }
+  .table-card-head {
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-card-head h6 {
+    font-weight: 700; font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--text-main); margin: 0;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+  thead th {
+    padding: 10px 16px; background: var(--surface-2);
+    border-bottom: 1px solid var(--border); font-size: .72rem;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted); font-weight: 600; text-align: left;
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 13px 16px; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #fafbfc; }
+  tbody tr.unread-row { background: #f0f7ff; }
+  tbody tr.unread-row:hover td { background: #e8f3ff; }
+  tbody tr.selected-row td { background: #fff7ed !important; }
+
+  /* ── Checkbox ── */
+  .notif-check {
+    width: 16px; height: 16px; cursor: pointer;
+    accent-color: var(--orange);
+  }
+  #check-all {
+    width: 16px; height: 16px; cursor: pointer;
+    accent-color: var(--blue);
+  }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 99px;
+    font-size: .71rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .b-payment     { background: #d1fae5; color: #065f46; }
+  .b-maintenance { background: #fef3c7; color: #92400e; }
+  .b-loan        { background: #ede9fe; color: #5b21b6; }
+  .b-system      { background: #dbeafe; color: #1e40af; }
+  .b-read        { background: #f1f5f9; color: #64748b; }
+  .b-unread      { background: #fef3c7; color: #92400e; }
+
+  /* ── Action buttons ── */
+  .act-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 9px; border-radius: 6px; border: 1px solid transparent;
+    font-size: .74rem; font-weight: 600; cursor: pointer;
+    text-decoration: none; transition: opacity .15s;
+    background: none;
+  }
+  .act-btn:hover { opacity: .8; }
+  .act-read   { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+  .act-delete { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+  .actions-wrap { display: flex; gap: 5px; align-items: center; }
+
+  /* ── Empty ── */
+  .empty-state { text-align: center; padding: 52px 20px; color: var(--text-muted); }
+  .empty-state .ei { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: .9rem; }
+
+  /* ── Filter tabs ── */
+  .filter-tabs {
+    display: flex; gap: 4px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 9px; padding: 4px; width: fit-content; margin-bottom: 16px;
+  }
+  .filter-tab {
+    padding: 6px 16px; border-radius: 6px; border: none;
+    font-size: .82rem; font-weight: 600; cursor: pointer;
+    background: transparent; color: var(--text-muted);
+    transition: background .15s, color .15s;
+  }
+  .filter-tab.active {
+    background: var(--surface); color: var(--text-main);
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+</style>
+
+
+<!-- Page header -->
+<div class="page-header">
+  <div>
+    <div class="page-title">🔔 Notifications</div>
+    <div class="page-sub">Manage all your system notifications</div>
+  </div>
+</div>
+
+
+<!-- Stat strip -->
+<div class="stat-strip">
+  <div class="strip-card">
+    <div class="strip-val">{{ total_count }}</div>
+    <div class="strip-label">Total</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-val" style="color:#f59e0b;">{{ unread_count }}</div>
+    <div class="strip-label">Unread</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-val" style="color:#10b981;">{{ total_count|add:"-"|add:unread_count }}</div>
+    <div class="strip-label">Read</div>
+  </div>
+</div>
+
+
+{% if notifications %}
+
+<!-- Filter tabs -->
+<div class="filter-tabs">
+  <button class="filter-tab active" onclick="filterTab('all', this)">All</button>
+  <button class="filter-tab" onclick="filterTab('unread', this)">Unread</button>
+  <button class="filter-tab" onclick="filterTab('read', this)">Read</button>
+</div>
+
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <label style="display:flex;align-items:center;gap:7px;font-size:.84rem;font-weight:600;cursor:pointer;">
+      <input type="checkbox" id="check-all" onchange="toggleAll(this)">
+      Select All
+    </label>
+    <span class="sel-info" id="sel-info">0 selected</span>
+
+    <!-- Delete selected form -->
+    <form method="POST" action="{% url 'delete_selected' %}" id="delete-selected-form">
+      {% csrf_token %}
+      <div id="hidden-ids"></div>
+      <button type="submit" class="btn btn-sm btn-sel-delete" id="btn-delete-selected"
+              onclick="return confirm('Delete selected notifications?')">
+        🗑 Delete Selected
+      </button>
+    </form>
+  </div>
+
+  <div class="toolbar-right">
+    <!-- Mark all read -->
+    <button class="btn btn-secondary btn-sm" onclick="markAllRead()">
+      ✓ Mark All Read
     </button>
-</form>
+
+    <!-- Delete all -->
+    <form method="POST" action="{% url 'delete_all' %}"
+          onsubmit="return confirm('Delete ALL notifications? This cannot be undone.')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger btn-sm">
+        🗑 Delete All
+      </button>
+    </form>
+  </div>
+</div>
 
 
-<table class="table table-bordered table-hover">
-    <thead class="table-dark">
-        <tr>
-            <th>Message</th>
-            <th>Type</th>
-            <th>Status</th>
-            <th>Date</th>
-            <th>Action</th>
-        </tr>
+<!-- Table -->
+<div class="table-card">
+  <div class="table-card-head">
+    <h6>All Notifications</h6>
+    <span style="font-size:.76rem;color:var(--text-muted);">{{ total_count }} total</span>
+  </div>
+
+  <table id="notif-table">
+    <thead>
+      <tr>
+        <th style="width:40px;"><input type="checkbox" id="check-all-head" onchange="toggleAll(this)"></th>
+        <th>Message</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
     </thead>
-
     <tbody>
+      {% for n in notifications %}
+      <tr class="notif-row {% if not n.is_read %}unread-row{% endif %}"
+          data-status="{% if n.is_read %}read{% else %}unread{% endif %}"
+          id="row-{{ n.id }}">
 
-        {% for n in notifications %}
-        <tr>
+        <!-- Checkbox -->
+        <td>
+          <input type="checkbox" class="notif-check" value="{{ n.id }}"
+                 onchange="updateSelection()">
+        </td>
 
-            <!-- MESSAGE -->
-            <td>
-                {% if not n.is_read %}
-                    <strong>{{ n.message }}</strong>
-                {% else %}
-                    {{ n.message }}
-                {% endif %}
-            </td>
+        <!-- Message -->
+        <td>
+          {% if not n.is_read %}
+            <strong style="color:var(--text-main);">{{ n.message }}</strong>
+          {% else %}
+            <span style="color:var(--text-muted);">{{ n.message }}</span>
+          {% endif %}
+        </td>
 
-            <!-- TYPE -->
-            <td>
-                <span class="badge bg-secondary">
-                    {{ n.notification_type }}
-                </span>
-            </td>
+        <!-- Type -->
+        <td>
+          <span class="badge
+            {% if n.notification_type == 'PAYMENT' %}b-payment
+            {% elif n.notification_type == 'MAINTENANCE' %}b-maintenance
+            {% elif n.notification_type == 'LOAN' %}b-loan
+            {% else %}b-system{% endif %}">
+            {{ n.notification_type }}
+          </span>
+        </td>
 
-            <!-- STATUS -->
-            <td>
-                {% if n.is_read %}
-                    <span class="badge bg-success">Read</span>
-                {% else %}
-                    <span class="badge bg-warning text-dark">Unread</span>
-                {% endif %}
-            </td>
+        <!-- Status -->
+        <td>
+          {% if n.is_read %}
+            <span class="badge b-read">✓ Read</span>
+          {% else %}
+            <span class="badge b-unread">● Unread</span>
+          {% endif %}
+        </td>
 
-            <!-- DATE -->
-            <td>
-                {{ n.created_at|date:"M d, Y H:i" }}
-            </td>
+        <!-- Date -->
+        <td style="color:var(--text-muted);font-size:.82rem;white-space:nowrap;">
+          {{ n.created_at|date:"M d, Y H:i" }}
+        </td>
 
-            <!-- ACTION -->
-            <td>
+        <!-- Actions -->
+        <td>
+          <div class="actions-wrap">
+            {% if not n.is_read %}
+            <form method="POST" action="{% url 'mark_read' n.id %}">
+              {% csrf_token %}
+              <button type="submit" class="act-btn act-read">✓ Read</button>
+            </form>
+            {% endif %}
 
-                {% if not n.is_read %}
-                <form method="POST" action="{% url 'mark_read' n.id %}">
-                    {% csrf_token %}
-                    <button class="btn btn-sm btn-outline-success">
-                        Mark as Read
-                    </button>
-                </form>
-                {% else %}
-                    <span class="text-muted">Done</span>
-                {% endif %}
+            <form method="POST" action="{% url 'delete_notification' n.id %}"
+                  onsubmit="return confirm('Delete this notification?')">
+              {% csrf_token %}
+              <button type="submit" class="act-btn act-delete">🗑</button>
+            </form>
+          </div>
+        </td>
 
-            </td>
-
-        </tr>
-
-        {% empty %}
-        <tr>
-            <td colspan="5" class="text-center text-muted">
-                No notifications available
-            </td>
-        </tr>
-        {% endfor %}
-
+      </tr>
+      {% endfor %}
     </tbody>
-</table>
+  </table>
+</div>
+
+{% else %}
+  <div class="table-card">
+    <div class="empty-state">
+      <div class="ei">🔔</div>
+      <p>You have no notifications.</p>
+    </div>
+  </div>
+{% endif %}
+
+
+<script>
+  // ── Toggle all checkboxes ──
+  function toggleAll(source) {
+    // Sync both header checkboxes
+    document.getElementById('check-all').checked      = source.checked;
+    document.getElementById('check-all-head').checked = source.checked;
+
+    document.querySelectorAll('.notif-check').forEach(cb => {
+      const row = cb.closest('tr');
+      if (row && row.style.display !== 'none') {
+        cb.checked = source.checked;
+        row.classList.toggle('selected-row', source.checked);
+      }
+    });
+    updateSelection();
+  }
+
+  // ── Update selection count and button visibility ──
+  function updateSelection() {
+    const checked = document.querySelectorAll('.notif-check:checked');
+    const count   = checked.length;
+    const info    = document.getElementById('sel-info');
+    const btn     = document.getElementById('btn-delete-selected');
+    const hidden  = document.getElementById('hidden-ids');
+
+    info.textContent = `${count} selected`;
+    info.classList.toggle('visible', count > 0);
+    btn.classList.toggle('visible', count > 0);
+
+    // Update hidden inputs for delete-selected form
+    hidden.innerHTML = '';
+    checked.forEach(cb => {
+      const input = document.createElement('input');
+      input.type  = 'hidden';
+      input.name  = 'selected_ids';
+      input.value = cb.value;
+      hidden.appendChild(input);
+    });
+
+    // Highlight selected rows
+    document.querySelectorAll('.notif-check').forEach(cb => {
+      cb.closest('tr').classList.toggle('selected-row', cb.checked);
+    });
+
+    // Sync header checkboxes
+    const all = document.querySelectorAll('.notif-check:not([style*="display: none"])').length;
+    document.getElementById('check-all').checked      = count > 0 && count === all;
+    document.getElementById('check-all-head').checked = count > 0 && count === all;
+  }
+
+  // ── Filter tabs ──
+  function filterTab(filter, btn) {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.querySelectorAll('.notif-row').forEach(row => {
+      if (filter === 'all') {
+        row.style.display = '';
+      } else {
+        row.style.display = row.dataset.status === filter ? '' : 'none';
+      }
+    });
+
+    // Reset selection after filter change
+    document.querySelectorAll('.notif-check').forEach(cb => cb.checked = false);
+    document.getElementById('check-all').checked = false;
+    document.getElementById('check-all-head').checked = false;
+    updateSelection();
+  }
+
+  // ── Mark all read via fetch ──
+  function markAllRead() {
+    fetch("{% url 'mark_all_read' %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'X-Requested-With': 'XMLHttpRequest',
+      }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok') window.location.reload();
+    });
+  }
+
+  function getCookie(name) {
+    let val = null;
+    if (document.cookie) {
+      document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '='))
+          val = decodeURIComponent(c.substring(name.length + 1));
+      });
+    }
+    return val;
+  }
+</script>
 
 {% endblock %}

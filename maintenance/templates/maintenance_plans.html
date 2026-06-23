@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="page-title">📅 Maintenance Plans</div>
+    <div class="page-sub">Set automatic recurring maintenance intervals per vehicle</div>
+  </div>
+  <a href="{% url 'maintenance_plan_create' %}" class="btn btn-primary btn-sm">+ Add Plan</a>
+</div>
+
+<div class="table-card">
+  <div class="table-card-head">Vehicle Maintenance Plans</div>
+
+  {% if plans %}
+  <table>
+    <thead>
+      <tr>
+        <th>Vehicle</th>
+        <th>Interval</th>
+        <th>Default Description</th>
+        <th>Last Scheduled</th>
+        <th>Next Due</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in plans %}
+      <tr>
+        <td><span class="plate-tag">{{ p.vehicle.number_plate }}</span></td>
+        <td style="font-weight:600;">Every {{ p.interval_days }} days</td>
+        <td style="color:var(--text-muted);">{{ p.default_description }}</td>
+        <td style="color:var(--text-muted);">{{ p.last_scheduled_date|default:"—" }}</td>
+        <td style="font-weight:600;">{{ p.next_due_date }}</td>
+        <td>
+          {% if p.is_active %}
+            <span class="badge bs-active">Active</span>
+          {% else %}
+            <span class="badge bs-inactive">Paused</span>
+          {% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <a href="{% url 'maintenance_plan_edit' p.pk %}" class="action-btn btn-edit">Edit</a>
+            <form method="POST" action="{% url 'maintenance_plan_generate_now' p.pk %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="action-btn btn-view" style="border:none;cursor:pointer;">Generate Now</button>
+            </form>
+            <a href="{% url 'maintenance_plan_delete' p.pk %}" class="action-btn btn-delete">Delete</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty-state">
+      <div class="ei">📅</div>
+      No maintenance plans set up yet.
+      <div style="margin-top:10px;">
+        <a href="{% url 'maintenance_plan_create' %}" class="btn btn-primary btn-sm">Create First Plan</a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+{% if vehicles_without_plan %}
+<div class="card card-p mt-4">
+  <h6 style="margin-bottom:10px;">⚠️ Vehicles without a maintenance plan</h6>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    {% for v in vehicles_without_plan %}
+      <span class="plate-tag">{{ v.number_plate }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,36 +1,103 @@
 {% extends 'base.html' %}
-
 {% block content %}
-<h2>Vehicles</h2>
 
-<a href="{% url 'vehicle_create' %}" class="btn btn-primary mb-3">Add Vehicle</a>
+<style>
+  :root {
+    --radius:12px; --border:#e2e8f0; --surface:#fff;
+    --surface-2:#f8fafc; --text-main:#0f172a; --text-muted:#64748b;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+  }
+  .page-header {
+    display:flex; justify-content:space-between; align-items:flex-start;
+    margin-bottom:24px; flex-wrap:wrap; gap:12px;
+  }
+  .page-title { font-size:1.4rem; font-weight:800; color:var(--text-main); margin:0; }
+  .page-sub   { font-size:.85rem; color:var(--text-muted); margin-top:3px; }
 
-<table class="table table-bordered">
+  .table-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow-sm); overflow:hidden;
+  }
+  .table-card-head {
+    padding:14px 20px; border-bottom:1px solid var(--border);
+    background:var(--surface-2); font-weight:700; font-size:.8rem;
+    text-transform:uppercase; letter-spacing:.07em; color:var(--text-main);
+  }
+
+  table { width:100%; border-collapse:collapse; font-size:.86rem; }
+  thead th {
+    padding:11px 16px; background:var(--surface-2);
+    border-bottom:1px solid var(--border); font-size:.73rem;
+    text-transform:uppercase; letter-spacing:.06em;
+    color:var(--text-muted); font-weight:600; text-align:left; white-space:nowrap;
+  }
+  tbody td { padding:13px 16px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover td { background:#fafbfc; }
+
+  .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
+
+  .plate-tag {
+    background:var(--text-main); color:#fff; border-radius:6px;
+    padding:3px 10px; font-size:.78rem; font-weight:800;
+    letter-spacing:.1em; display:inline-block;
+  }
+</style>
+
+
+<div class="page-header">
+  <div>
+    <div class="page-title">🚗 Vehicles</div>
+    <div class="page-sub">All fleet vehicles</div>
+  </div>
+  <a href="{% url 'vehicle_create' %}" class="btn btn-primary btn-sm">+ Add Vehicle</a>
+</div>
+
+
+<div class="table-card">
+  <div class="table-card-head">Vehicle Records</div>
+
+  {% if vehicles %}
+  <table>
     <thead>
-        <tr>
-            <th>Plate</th>
-            <th>Model</th>
-            <th>Year</th>
-            <th>Status</th>
-            <th>Driver</th>
-            <th>Actions</th>
-        </tr>
+      <tr>
+        <th>Plate</th>
+        <th>Model</th>
+        <th>Year</th>
+        <th>Status</th>
+        <th>Driver</th>
+        <th>Actions</th>
+      </tr>
     </thead>
     <tbody>
-        {% for v in vehicles %}
-        <tr>
-            <td>{{ v.number_plate }}</td>
-            <td>{{ v.model }}</td>
-            <td>{{ v.year }}</td>
-            <td>{{ v.status }}</td>
-            <td>{{ v.assigned_driver }}</td>
-            <td>
-                <a href="{% url 'vehicle_detail' v.id %}" class="btn btn-info btn-sm">View</a>
-                <a href="{% url 'vehicle_update' v.id %}" class="btn btn-warning btn-sm">Edit</a>
-                <a href="{% url 'vehicle_delete' v.id %}" class="btn btn-danger btn-sm">Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
+      {% for v in vehicles %}
+      <tr>
+        <td><span class="plate-tag">{{ v.number_plate }}</span></td>
+        <td style="font-weight:600;">{{ v.model }}</td>
+        <td>{{ v.year }}</td>
+        <td>
+          <span class="badge
+            {% if v.status == 'ACTIVE' %}bs-active
+            {% elif v.status == 'MAINTENANCE' %}bs-maintenance
+            {% else %}bs-inactive{% endif %}">
+            {{ v.status }}
+          </span>
+        </td>
+        <td style="color:var(--text-muted);">{{ v.assigned_driver|default:"—" }}</td>
+        <td>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <a href="{% url 'vehicle_detail' v.id %}" class="action-btn btn-view">View</a>
+            <a href="{% url 'vehicle_update' v.id %}" class="action-btn btn-edit">Edit</a>
+            <a href="{% url 'vehicle_delete' v.id %}" class="action-btn btn-delete">Delete</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
     </tbody>
-</table>
+  </table>
+  {% else %}
+    <div class="empty-state">No vehicles found.</div>
+  {% endif %}
+</div>
+
 {% endblock %}

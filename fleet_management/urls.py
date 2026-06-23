@@ -16,12 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.decorators.csrf import csrf_exempt
 
 from accounts.views import landing
+from payments.mpesa.callbacks import mpesa_callback
 
 urlpatterns = [
     path('', landing, name='landing'),
-    
+
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('vehicles/', include('vehicles.urls')),
@@ -31,4 +33,7 @@ urlpatterns = [
     path('notifications/', include('notifications.urls')),
     path('reports/', include('reports.urls')),
     path('loans/', include('loans.urls')),
+
+    # ── M-Pesa callback — csrf_exempt because Safaricom sends no CSRF token ──
+    path('mpesa/callback/', csrf_exempt(mpesa_callback), name='mpesa_callback'),
 ]

@@ -7,6 +7,7 @@ from django.urls import reverse
 from accounts.permissions import driver_required, admin_required
 from vehicles.models import Vehicle
 from .models import Payment
+from django.conf import settings
 from .services import (
     create_payment,
     get_driver_payments,
@@ -21,7 +22,6 @@ from .mpesa.client import MpesaClient
 # -------------------------
 @driver_required
 def payment_form(request):
-
     vehicle = Vehicle.objects.filter(assigned_driver=request.user).first()
 
     if not vehicle:
@@ -29,13 +29,9 @@ def payment_form(request):
         return redirect('payment_list')
 
     if request.method == 'POST':
-
-        amount = request.POST.get('amount')
+        amount       = request.POST.get('amount')
         phone_number = request.POST.get('phone_number')
 
-        # -------------------------
-        # VALIDATION
-        # -------------------------
         if not amount or not phone_number:
             messages.error(request, "All fields required.")
             return redirect('payment_form')
@@ -49,61 +45,44 @@ def payment_form(request):
             return redirect('payment_form')
 
         if not phone_number.startswith("07") or len(phone_number) != 10:
-            messages.error(request, "Invalid phone number.")
+            messages.error(request, "Invalid phone number. Use format 07XXXXXXXX.")
             return redirect('payment_form')
 
-        # -------------------------
-        # CREATE PAYMENT (TEMP)
-        # -------------------------
-        payment = create_payment({
-            "driver": request.user,
-            "vehicle": vehicle,
-            "amount": amount,
-            "phone_number": phone_number,
-            "status": "PENDING"
-        })
+        # ── Step 1: Create payment record ──
+        payment = Payment.objects.create(
+            driver=request.user,
+            vehicle=vehicle,
+            amount=amount,
+            phone_number=phone_number,
+            status="PENDING"
+        )
 
-        # -------------------------
-        # INITIATE STK PUSH
-        # -------------------------
+        # ── Step 2: Fire STK push ──
+        from django.conf import settings
         mpesa = MpesaClient()
 
-        callback_url = request.build_absolute_uri(
-            reverse('mpesa_callback')
-        )
-
         response = mpesa.stk_push(
-            phone_number="254" + phone_number[1:],
+            phone_number=phone_number,
             amount=amount,
             reference=payment.reference,
-            callback_url=callback_url
+            callback_url=settings.MPESA_CALLBACK_URL
         )
 
-        # -------------------------
-        # HANDLE STK RESPONSE (CRITICAL FIX)
-        # -------------------------
         if not response.get("success"):
-            # ❌ STK FAILED → DELETE PAYMENT
             payment.delete()
-
-            messages.error(request, f"Payment failed: {response.get('message')}")
+            messages.error(request, f"M-Pesa error: {response.get('message')}")
             return redirect('payment_form')
 
-        # -------------------------
-        # STK SUCCESS → SAVE CHECKOUT ID
-        # -------------------------
+        # ── Step 3: Save checkout ID as reference ──
         checkout_id = response.get("checkout_request_id")
-
         if checkout_id:
             payment.reference = checkout_id
             payment.save(update_fields=['reference'])
 
-        messages.success(request, "STK Push sent. Enter PIN on your phone.")
+        messages.success(request, "STK Push sent. Enter your M-Pesa PIN.")
         return redirect('payment_list')
 
-    return render(request, 'payment_form.html', {
-        'vehicle': vehicle
-    })
+    return render(request, 'payment_form.html', {'vehicle': vehicle})
 
 
 # -------------------------

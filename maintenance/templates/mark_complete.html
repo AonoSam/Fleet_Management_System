@@ -1,56 +1,51 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<h2 class="mb-4">Complete Maintenance</h2>
+<div class="form-card">
+  <div class="form-card-head">
+    <h5>✅ Complete Maintenance</h5>
+    <a href="{% url 'schedule_list' %}" class="btn btn-secondary btn-sm">← Back</a>
+  </div>
 
-<div class="card p-4 shadow-sm">
-
-    <!-- 🔹 DETAILS -->
-    <h5 class="mb-3">Maintenance Details</h5>
-
-    <p><strong>Vehicle:</strong> 
-        {{ schedule.vehicle.number_plate }} - {{ schedule.vehicle.model }}
-    </p>
-
-    <p><strong>Driver:</strong> 
-        {% if schedule.vehicle.assigned_driver %}
+  <div class="form-card-body">
+    <div class="card card-p3 mb-4" style="background:var(--surface-2);">
+      <div class="vrow">
+        <span class="k">Vehicle</span>
+        <span class="v">{{ schedule.vehicle.number_plate }} — {{ schedule.vehicle.model }}</span>
+      </div>
+      <div class="vrow">
+        <span class="k">Driver</span>
+        <span class="v">
+          {% if schedule.vehicle.assigned_driver %}
             {{ schedule.vehicle.assigned_driver.username }}
-        {% else %}
-            <span class="text-muted">Unassigned</span>
-        {% endif %}
-    </p>
+          {% else %}
+            <span style="color:var(--text-muted);">Unassigned</span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="vrow">
+        <span class="k">Description</span>
+        <span class="v">{{ schedule.description }}</span>
+      </div>
+      <div class="vrow">
+        <span class="k">Service Date</span>
+        <span class="v">{{ schedule.service_date|date:"M d, Y" }}</span>
+      </div>
+    </div>
 
-    <p><strong>Description:</strong> {{ schedule.description }}</p>
-    <p><strong>Service Date:</strong> {{ schedule.service_date|date:"M d, Y" }}</p>
-
-    <hr>
-
-    <!-- 🔹 FORM -->
     <form method="POST">
-        {% csrf_token %}
-
-        <div class="mb-3">
-            <label class="form-label">Repair Cost (KSh)</label>
-            <input type="number"
-                   step="0.01"
-                   min="0"
-                   name="cost"
-                   class="form-control"
-                   placeholder="Enter repair cost"
-                   required>
-        </div>
-
-        <button class="btn btn-success">
-            Confirm Completion
-        </button>
-
-        <a href="{% url 'schedule_list' %}" class="btn btn-secondary">
-            Back
-        </a>
-
+      {% csrf_token %}
+      <div class="field-group">
+        <label>Repair Cost (KES) *</label>
+        <input type="number" step="0.01" min="0" name="cost"
+               placeholder="Enter repair cost" required>
+      </div>
+      <div class="form-actions" style="padding:0;background:none;border:none;">
+        <a href="{% url 'schedule_list' %}" class="btn btn-secondary btn-sm">Cancel</a>
+        <button type="submit" class="btn btn-success btn-sm">Confirm Completion</button>
+      </div>
     </form>
-
+  </div>
 </div>
 
 {% endblock %}

@@ -1,13 +1,14 @@
-import json
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+import json
 
 from payments.models import Payment
 from payments.services import update_payment_status
 from loans.services import record_repayment
 
 
+@csrf_exempt  
 def mpesa_callback(request):
-
     try:
         data = json.loads(request.body.decode('utf-8'))
         result = data.get("Body", {}).get("stkCallback", {})
@@ -18,62 +19,41 @@ def mpesa_callback(request):
         if not checkout_id:
             return JsonResponse({"error": "Missing CheckoutRequestID"})
 
-        # -------------------------
-        # FIND PAYMENT
-        # -------------------------
         payment = Payment.objects.filter(reference=checkout_id).first()
 
         if not payment:
             return JsonResponse({"Result": "Payment not found"})
 
-        # -------------------------
-        # IDEMPOTENCY (NO DOUBLE PROCESS)
-        # -------------------------
         if payment.status == "SUCCESS":
             return JsonResponse({"Result": "Already processed"})
 
-        # -------------------------
-        # ❌ FAILED / CANCELLED / TIMEOUT
-        # -------------------------
         if result_code != 0:
+            payment.status = "FAILED"
+            payment.save(update_fields=['status'])
+            return JsonResponse({"Result": "FAILED"})
 
-            # 🔥 DELETE FAILED PAYMENT (CRITICAL FIX)
-            payment.delete()
-
-            return JsonResponse({"Result": "FAILED - DELETED"})
-
-        # -------------------------
-        # ✅ SUCCESS TRANSACTION
-        # -------------------------
+        # ── Parse metadata ──
         metadata = result.get("CallbackMetadata", {}).get("Item", [])
-
         receipt = None
-        amount = 0
+        amount  = 0
 
         for item in metadata:
             name = item.get("Name")
-
             if name == "MpesaReceiptNumber":
                 receipt = item.get("Value")
-
             elif name == "Amount":
                 amount = float(item.get("Value", 0))
 
-        # -------------------------
-        # UPDATE PAYMENT
-        # -------------------------
+        # ── Update payment ──
         update_payment_status(payment, "SUCCESS", receipt=receipt)
 
-        # -------------------------
-        # AUTO LOAN REPAYMENT (SAFE)
-        # -------------------------
+        # ── Auto loan repayment ──
         if payment.payment_type == "LOAN_REPAYMENT" and payment.loan:
-
-            # 🔥 DOUBLE SAFETY (VERY IMPORTANT)
-            if payment.loan and payment.status == "SUCCESS":
-                record_repayment(payment.loan, amount)
+            record_repayment(payment.loan, amount)
 
         return JsonResponse({"Result": "OK"})
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()  # shows full error in Django terminal
         return JsonResponse({"error": str(e)})

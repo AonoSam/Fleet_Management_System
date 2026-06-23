@@ -1,13 +1,41 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<h2>Create User</h2>
+<div class="form-card">
+  <div class="form-card-head">
+    <h5>👤 Create New User</h5>
+    <a href="{% url 'user_list' %}" class="btn btn-secondary btn-sm">← Back</a>
+  </div>
 
-<form method="POST">
+  <form method="POST">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Create</button>
-</form>
+    <div class="form-card-body">
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-3">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+      <div class="field-group">
+        <label>{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+        {{ field }}
+        {% if field.help_text %}
+          <div class="field-hint">{{ field.help_text }}</div>
+        {% endif %}
+        {% if field.errors %}
+          <div class="field-hint" style="color:#dc2626;">{{ field.errors|striptags }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+    </div>
+    <div class="form-actions">
+      <a href="{% url 'user_list' %}" class="btn btn-secondary btn-sm">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-sm">Create User</button>
+    </div>
+  </form>
+</div>
 
 {% endblock %}

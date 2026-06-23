@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from accounts.permissions import admin_required, driver_required
 from vehicles.models import Vehicle
-from maintenance.models import MaintenanceSchedule, RepairLog
-from maintenance.services import get_schedules, get_repairs
+from maintenance.models import MaintenanceSchedule, RepairLog, VehicleMaintenancePlan
+from maintenance.services import get_schedules, get_repairs, get_maintenance_plans
 
 
 # -------------------------
@@ -15,7 +15,7 @@ def schedule_list(request):
 
 
 # -------------------------
-# ADMIN: CREATE SCHEDULE
+# ADMIN: CREATE SCHEDULE (manual one-off)
 # -------------------------
 @admin_required
 def schedule_create(request):
@@ -34,6 +34,7 @@ def schedule_create(request):
 
 # -------------------------
 # MARK COMPLETE + REPAIR LOG
+# (auto-generates next recurring schedule via signal)
 # -------------------------
 @admin_required
 def mark_complete(request, pk):
@@ -60,13 +61,84 @@ def mark_complete(request, pk):
 
 
 # -------------------------
+# ADMIN: MAINTENANCE PLANS (recurring interval per vehicle)
+# -------------------------
+@admin_required
+def maintenance_plans(request):
+    plans = get_maintenance_plans()
+
+    # Vehicles that don't have a plan yet
+    vehicles_without_plan = Vehicle.objects.exclude(
+        id__in=plans.values_list('vehicle_id', flat=True)
+    )
+
+    return render(request, 'maintenance_plans.html', {
+        'plans': plans,
+        'vehicles_without_plan': vehicles_without_plan,
+    })
+
+
+@admin_required
+def maintenance_plan_create(request):
+    vehicles = Vehicle.objects.exclude(
+        id__in=VehicleMaintenancePlan.objects.values_list('vehicle_id', flat=True)
+    )
+
+    if request.method == 'POST':
+        start_date = request.POST.get('start_date') or None  # '' becomes None
+
+        plan = VehicleMaintenancePlan.objects.create(
+            vehicle_id=request.POST.get('vehicle'),
+            interval_days=int(request.POST.get('interval_days', 90)),
+            default_description=request.POST.get('default_description') or "Routine scheduled maintenance",
+            last_scheduled_date=start_date,
+        )
+        # Immediately generate the first upcoming schedule
+        plan.generate_next_schedule()
+        return redirect('maintenance_plans')
+
+    return render(request, 'maintenance_plan_form.html', {'vehicles': vehicles})
+
+
+@admin_required
+def maintenance_plan_edit(request, pk):
+    plan = get_object_or_404(VehicleMaintenancePlan, pk=pk)
+
+    if request.method == 'POST':
+        plan.interval_days = int(request.POST.get('interval_days', plan.interval_days))
+        plan.default_description = request.POST.get('default_description') or plan.default_description
+        plan.is_active = request.POST.get('is_active') == 'on'
+        plan.save()
+        return redirect('maintenance_plans')
+
+    return render(request, 'maintenance_plan_form.html', {'plan': plan})
+
+
+@admin_required
+def maintenance_plan_delete(request, pk):
+    plan = get_object_or_404(VehicleMaintenancePlan, pk=pk)
+    if request.method == 'POST':
+        plan.delete()
+        return redirect('maintenance_plans')
+    return render(request, 'maintenance_plan_confirm_delete.html', {'plan': plan})
+
+
+@admin_required
+def maintenance_plan_generate_now(request, pk):
+    """Manually trigger generating the next schedule immediately."""
+    plan = get_object_or_404(VehicleMaintenancePlan, pk=pk)
+    if request.method == 'POST':
+        plan.generate_next_schedule()
+    return redirect('maintenance_plans')
+
+
+# -------------------------
 # ADMIN: REPAIR LOGS LIST
 # -------------------------
 @admin_required
 def repair_logs(request):
     repairs = RepairLog.objects.select_related('vehicle').all()
 
-    # Optional filters
     vehicle_id = request.GET.get('vehicle')
     category   = request.GET.get('category')
     progress   = request.GET.get('progress')

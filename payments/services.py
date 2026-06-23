@@ -10,15 +10,8 @@ from loans.services import record_repayment
 # CREATE PAYMENT (CORE)
 # -------------------------
 def create_payment(data):
-    """
-    Creates payment + immediately triggers MPESA STK push
-    """
-
+    # Just create the record — STK is handled by the view
     payment = Payment.objects.create(**data)
-
-    # 🔥 AUTO INITIATE MPESA
-    initiate_mpesa_payment(payment)
-
     return payment
 
 
