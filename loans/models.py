@@ -110,6 +110,29 @@ class Loan(models.Model):
 
     def balance(self):
         return self.total_payable() - self.total_paid()
+    
+
+    def balance(self):
+        return self.total_payable() - self.total_paid()
+
+    # ✅ NEW — overpayment tracking
+    def overpaid_amount(self):
+        """
+        Returns the excess amount paid beyond what was owed,
+        as a positive number. Returns 0 if not overpaid.
+        """
+        raw_balance = self.balance()
+        if raw_balance < 0:
+            return abs(raw_balance)
+        return Decimal('0.00')
+
+    def display_balance(self):
+        """
+        Balance for UI display — never shows a negative number.
+        Use this in templates instead of balance() directly.
+        """
+        raw_balance = self.balance()
+        return raw_balance if raw_balance > 0 else Decimal('0.00')
 
     def is_fully_paid(self):
         return self.balance() <= 0

@@ -108,10 +108,23 @@ def admin_payment_list(request):
 # -------------------------
 # MANUAL VERIFY (FALLBACK ONLY)
 # -------------------------
+
 @admin_required
 def verify_payment(request, pk):
     payment = get_object_or_404(Payment, pk=pk)
 
-    if payment.status != 'SUCCESS':
-        messages.warning(request, "Only completed MPESA payments can be verified.")
+    if payment.status == 'SUCCESS':
+        messages.info(request, "This payment is already marked as successful.")
+    elif payment.status == 'FAILED':
+        messages.warning(request, "This payment failed and cannot be verified.")
+    else:
+        # Manual fallback: admin confirms a PENDING payment as
+        # successful (e.g. M-Pesa callback didn't arrive but the
+        # admin confirmed receipt via M-Pesa statement/SMS).
+        # The post_save signal will automatically fire the
+        # admin notification once status flips to SUCCESS.
+        payment.status = 'SUCCESS'
+        payment.save(update_fields=['status'])
+        messages.success(request, "Payment manually verified and marked as successful.")
+
     return redirect('admin_payment_list')

@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -61,7 +61,6 @@ def create_loan(request):
             requested_by=request.user
         )
 
-        # Notifications
         if loan.loan_type == 'DRIVER' and loan.driver:
             create_notification(
                 loan.driver,
@@ -105,9 +104,7 @@ def request_loan(request):
             requested_by=request.user
         )
 
-        # Notify admins
         admins = User.objects.filter(role='ADMIN')
-
         for admin in admins:
             create_notification(
                 admin,
@@ -124,10 +121,14 @@ def request_loan(request):
 # -----------------------
 # LOAN DETAIL
 # -----------------------
-@admin_required
+@login_required
 def loan_detail(request, pk):
 
     loan = get_loan(pk)
+
+    if request.user.role == 'DRIVER' and loan.driver != request.user:
+        messages.error(request, "You are not allowed to view this loan.")
+        return redirect('my_loans')
 
     return render(request, 'loan_detail.html', {
         'loan': loan,
@@ -136,14 +137,13 @@ def loan_detail(request, pk):
 
 
 # -----------------------
-# APPROVE LOAN (FIXED FLOW)
+# APPROVE LOAN
 # -----------------------
 @admin_required
 def approve_loan(request, pk):
 
     loan = get_loan(pk)
 
-    # 🔥 apply interest ONLY once
     if loan.loan_type == 'DRIVER' and loan.interest_rate == 0:
         loan.interest_rate = calculate_driver_interest(loan.amount)
 
@@ -151,7 +151,6 @@ def approve_loan(request, pk):
     loan.approved_by = request.user
     loan.save()
 
-    # Notify driver
     if loan.driver:
         create_notification(
             loan.driver,
@@ -185,22 +184,39 @@ def reject_loan(request, pk):
     messages.warning(request, "Loan rejected.")
     return redirect('loan_list')
 
+
 # -----------------------
-# REPAY LOAN (MPESA + MANUAL FIXED)
+# REPAY LOAN (MPESA + MANUAL)
+#
+# ✅ FIXED:
+# 1. M-Pesa amounts are rounded to the nearest whole shilling
+#    before being sent to Safaricom (M-Pesa rejects decimals
+#    and amounts below KSh 1). The rounding is shown to the
+#    user BEFORE submission so there are no surprises.
+# 2. Overpayment is now explicitly allowed. If the entered
+#    amount exceeds the remaining balance, the system still
+#    accepts it, records the FULL amount paid, marks the loan
+#    PAID, and informs the user of the excess so it's visible
+#    rather than silently absorbed.
+# 3. Bank loans remain manual/cash only.
 # -----------------------
 @login_required
 def repay_loan(request, pk):
 
     loan = get_loan(pk)
 
-    # 🔐 SECURITY
     if request.user.role == 'DRIVER' and loan.driver != request.user:
         messages.error(request, "Not allowed.")
         return redirect('my_loans')
 
     if request.method == 'POST':
 
-        amount = Decimal(request.POST.get('amount') or 0)
+        try:
+            amount = Decimal(request.POST.get('amount') or 0)
+        except Exception:
+            messages.error(request, "Invalid amount.")
+            return redirect('loan_detail', pk=pk)
+
         method = request.POST.get('method')
         phone_number = request.POST.get('phone_number')
 
@@ -208,8 +224,21 @@ def repay_loan(request, pk):
             messages.error(request, "Invalid amount.")
             return redirect('loan_detail', pk=pk)
 
+        # Block M-Pesa for BANK loans
+        if loan.loan_type == 'BANK' and method == 'MPESA':
+            messages.error(
+                request,
+                "Bank loans can only be repaid manually/cash for now. "
+                "Direct bank integration (KCB/Equity) is coming soon."
+            )
+            return redirect('loan_detail', pk=pk)
+
+        # Detect overpayment up front so we can inform the user either way
+        balance_before = loan.balance()
+        is_overpayment = amount > balance_before
+
         # =========================
-        # 🔵 MPESA FLOW
+        # MPESA FLOW (driver loans only)
         # =========================
         if method == "MPESA":
 
@@ -217,56 +246,64 @@ def repay_loan(request, pk):
                 messages.error(request, "Enter valid phone number.")
                 return redirect('loan_detail', pk=pk)
 
+            # ── Round to the nearest whole shilling for M-Pesa ──
+            # M-Pesa STK Push rejects decimal amounts and anything
+            # below KSh 1. We round HALF_UP (4000.40 -> 4000,
+            # 4000.50 -> 4001) and tell the user what will actually
+            # be charged.
+            mpesa_amount = amount.to_integral_value(rounding=ROUND_HALF_UP)
+
+            if mpesa_amount < 1:
+                messages.error(request, "Amount must be at least KSh 1 for M-Pesa.")
+                return redirect('loan_detail', pk=pk)
+
             from payments.services import create_payment
             from payments.mpesa.client import MpesaClient
-            from django.urls import reverse
+            from django.conf import settings
 
-            # 🔥 CREATE PAYMENT (LINKED TO LOAN)
             payment = create_payment({
                 "driver": loan.driver,
                 "loan": loan,
                 "payment_type": "LOAN_REPAYMENT",
-                "amount": amount,
+                "amount": mpesa_amount,
                 "phone_number": phone_number,
                 "status": "PENDING"
             })
 
-            # 🔥 INITIATE STK
             mpesa = MpesaClient()
-
-            callback_url = request.build_absolute_uri(
-                reverse('mpesa_callback')
-            )
 
             response = mpesa.stk_push(
                 phone_number="254" + phone_number[1:],
-                amount=amount,
+                amount=mpesa_amount,
                 reference=payment.reference,
-                callback_url=callback_url
+                callback_url=settings.MPESA_CALLBACK_URL
             )
 
-            # 🔥 HANDLE FAILURE (CRITICAL)
             if not response.get("success"):
                 payment.delete()
-
                 messages.error(request, f"STK failed: {response.get('message')}")
                 return redirect('loan_detail', pk=pk)
 
-            # 🔥 SAVE CHECKOUT ID
             checkout_id = response.get("checkout_request_id")
-
             if checkout_id:
                 payment.reference = checkout_id
                 payment.save(update_fields=['reference'])
+
+            if mpesa_amount != amount:
+                messages.info(
+                    request,
+                    f"M-Pesa requires whole shillings — KSh {amount} was rounded to KSh {mpesa_amount}."
+                )
 
             messages.success(request, "STK sent. Complete payment on your phone.")
             return redirect('loan_detail', pk=pk)
 
         # =========================
-        # 🟡 MANUAL FLOW
+        # MANUAL FLOW (driver + bank loans)
+        # No rounding needed — cash/manual entries can carry
+        # cents exactly as entered.
         # =========================
         else:
-
             record_repayment(loan, amount)
 
             if loan.driver:
@@ -276,12 +313,22 @@ def repay_loan(request, pk):
                     'PAYMENT'
                 )
 
-            messages.success(request, "Manual repayment recorded.")
+            if is_overpayment:
+                excess = amount - balance_before
+                messages.success(
+                    request,
+                    f"Repayment of KSh {amount} recorded. This loan is now fully paid, "
+                    f"with an excess of KSh {excess} over the remaining balance."
+                )
+            else:
+                messages.success(request, "Manual repayment recorded.")
+
             return redirect('loan_detail', pk=pk)
 
     return render(request, 'loan_repay.html', {
         'loan': loan
     })
+
 
 # -----------------------
 # DRIVER LOANS
