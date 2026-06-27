@@ -48,13 +48,37 @@
       <div class="vrow">
         <span class="k">Balance</span>
         <span class="v" style="{% if loan.balance > 0 %}color:#ef4444;{% else %}color:#10b981;{% endif %}">
-          KSh {{ loan.balance|floatformat:2 }}
+          KSh {{ loan.display_balance|floatformat:2 }}
         </span>
       </div>
+      {% if loan.driver %}
+      <div class="vrow">
+        <span class="k">{{ loan.driver.username }}'s Credit Balance</span>
+        <span class="v" style="color:{% if available_credit > 0 %}#10b981{% else %}var(--text-muted){% endif %};font-weight:700;">
+          KSh {{ available_credit|floatformat:2 }}
+        </span>
+      </div>
+      {% endif %}
     </div>
   </div>
 
 </div>
+
+
+<!-- APPLY CREDIT (admin only) -->
+{% if request.user.role == 'ADMIN' and loan.driver and loan.status == 'ACTIVE' and available_credit > 0 %}
+<div class="alert alert-success mb-4" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+  <div>
+    💰 <strong>{{ loan.driver.username }}</strong> has <strong>KSh {{ available_credit|floatformat:2 }}</strong>
+    in unused credit from a previous overpayment. You can apply it to this loan now.
+  </div>
+  <form method="POST" action="{% url 'apply_credit' loan.id %}"
+        onsubmit="return confirm('Apply available credit to this loan?')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success btn-sm">Apply Credit Now</button>
+  </form>
+</div>
+{% endif %}
 
 
 <!-- REPAYMENT HISTORY -->

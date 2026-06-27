@@ -86,17 +86,29 @@ class VehicleMaintenancePlan(models.Model):
         """
         Creates the next MaintenanceSchedule for this vehicle
         based on the interval, if one doesn't already exist
-        for that date.
+        for that date OR within a close window around it.
+
+        ── HARDENING FIX ──
+        Previously only checked for an EXACT service_date match.
+        If an admin manually created a one-off schedule a few
+        days away from the auto-generated date, this method
+        would create a second, separate schedule for the same
+        vehicle close together — leading to duplicate/confusing
+        alerts. Now checks a +/- 3 day window around the
+        computed next_date to catch near-duplicates too.
         """
         next_date = self.next_due_date()
 
-        exists = MaintenanceSchedule.objects.filter(
+        window_start = next_date - timedelta(days=3)
+        window_end = next_date + timedelta(days=3)
+
+        exists_nearby = MaintenanceSchedule.objects.filter(
             vehicle=self.vehicle,
-            service_date=next_date,
-            completed=False
+            service_date__range=(window_start, window_end),
+            completed=False,
         ).exists()
 
-        if not exists:
+        if not exists_nearby:
             schedule = MaintenanceSchedule.objects.create(
                 vehicle=self.vehicle,
                 service_date=next_date,

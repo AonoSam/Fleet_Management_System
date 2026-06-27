@@ -26,14 +26,22 @@ def maintenance_notification(sender, instance, created, **kwargs):
     vehicle = instance.vehicle
     driver = vehicle.assigned_driver if vehicle.assigned_driver else None
 
-    # When a new schedule is created
+    # When a new schedule is created (whether manual or
+    # auto-materialized by the daily job 2 days before due)
     if created:
         msg = f"Maintenance scheduled for {vehicle.number_plate} on {instance.service_date}"
         if driver:
             create_notification(driver, msg, 'MAINTENANCE')
         notify_admins(msg, 'MAINTENANCE')
 
-    # When marked completed: notify + auto-generate next schedule
+    # ── CHANGED ──
+    # When marked completed: notify only. We no longer call
+    # plan.generate_next_schedule() here. The plan's
+    # last_scheduled_date is updated so next_due_date() can be
+    # computed correctly, but the actual NEXT MaintenanceSchedule
+    # row is only created by the daily check_maintenance_alerts
+    # job once that computed date is within 2 days — see
+    # maintenance/management/commands/check_maintenance_alerts.py
     if instance.completed:
         msg = f"Maintenance completed for {vehicle.number_plate}"
         if driver:
@@ -44,4 +52,5 @@ def maintenance_notification(sender, instance, created, **kwargs):
         if plan and plan.is_active:
             plan.last_scheduled_date = instance.service_date
             plan.save(update_fields=['last_scheduled_date'])
-            plan.generate_next_schedule()
+            # NOTE: generate_next_schedule() is intentionally NOT
+            # called here anymore.

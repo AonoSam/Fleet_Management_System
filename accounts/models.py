@@ -52,6 +52,14 @@ class DriverProfile(models.Model):
 
     total_loans_taken = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_repaid      = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    
+
+    credit_balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text="Unused overpayment credit available to apply to future loans."
+    )
 
     def __str__(self):
         return self.user.username

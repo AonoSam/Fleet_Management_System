@@ -2,8 +2,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from decimal import Decimal, InvalidOperation
 
-from django.urls import reverse
-
 from accounts.permissions import driver_required, admin_required
 from vehicles.models import Vehicle
 from .models import Payment
@@ -14,8 +12,9 @@ from .services import (
     get_all_payments,
     update_payment_status
 )
-
+from .phone_utils import normalize_phone, InvalidPhoneNumberError
 from .mpesa.client import MpesaClient
+
 
 # -------------------------
 # DRIVER: CREATE PAYMENT (FIXED MPESA FLOW)
@@ -44,8 +43,13 @@ def payment_form(request):
             messages.error(request, "Invalid amount.")
             return redirect('payment_form')
 
-        if not phone_number.startswith("07") or len(phone_number) != 10:
-            messages.error(request, "Invalid phone number. Use format 07XXXXXXXX.")
+        # ── FIXED: validate using the shared phone_utils instead
+        #    of the old startswith("07") check, which rejected
+        #    valid 01-prefixed Safaricom numbers ──
+        try:
+            normalized_phone = normalize_phone(phone_number)
+        except InvalidPhoneNumberError as e:
+            messages.error(request, str(e))
             return redirect('payment_form')
 
         # ── Step 1: Create payment record ──
@@ -53,16 +57,15 @@ def payment_form(request):
             driver=request.user,
             vehicle=vehicle,
             amount=amount,
-            phone_number=phone_number,
+            phone_number=normalized_phone,
             status="PENDING"
         )
 
         # ── Step 2: Fire STK push ──
-        from django.conf import settings
         mpesa = MpesaClient()
 
         response = mpesa.stk_push(
-            phone_number=phone_number,
+            phone_number=normalized_phone,
             amount=amount,
             reference=payment.reference,
             callback_url=settings.MPESA_CALLBACK_URL
@@ -108,7 +111,6 @@ def admin_payment_list(request):
 # -------------------------
 # MANUAL VERIFY (FALLBACK ONLY)
 # -------------------------
-
 @admin_required
 def verify_payment(request, pk):
     payment = get_object_or_404(Payment, pk=pk)
@@ -118,11 +120,6 @@ def verify_payment(request, pk):
     elif payment.status == 'FAILED':
         messages.warning(request, "This payment failed and cannot be verified.")
     else:
-        # Manual fallback: admin confirms a PENDING payment as
-        # successful (e.g. M-Pesa callback didn't arrive but the
-        # admin confirmed receipt via M-Pesa statement/SMS).
-        # The post_save signal will automatically fire the
-        # admin notification once status flips to SUCCESS.
         payment.status = 'SUCCESS'
         payment.save(update_fields=['status'])
         messages.success(request, "Payment manually verified and marked as successful.")
