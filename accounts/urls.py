@@ -2,14 +2,13 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-<<<<<<< HEAD
-    
+
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-=======
+
     path('login/',   views.login_view,  name='login'),
     path('logout/',  views.logout_view, name='logout'),
->>>>>>> c0367f47e91f1327e1733b6b75897017ca7fc7bb
+
 
     # User management
     path('users/',                views.user_list,       name='user_list'),
