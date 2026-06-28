@@ -33,51 +33,21 @@ def landing(request):
 # AUTH
 # ========================
 from django.contrib.auth import authenticate, login, get_user_model
+from django.http import HttpResponse
+from django.contrib.auth import authenticate
 
 def login_view(request):
     if request.method == "POST":
-        username = request.POST.get("username", "").strip()
-        password = request.POST.get("password", "")
-
-        User = get_user_model()
-
-        print("\n========== LOGIN DEBUG ==========")
-        print("Username entered:", username)
-        print("Total users:", User.objects.count())
-
-        user_obj = User.objects.filter(username=username).first()
-
-        if user_obj:
-            print("User exists: YES")
-            print("Role:", user_obj.role)
-            print("Active:", user_obj.is_active)
-            print("Staff:", user_obj.is_staff)
-            print("Superuser:", user_obj.is_superuser)
-            print("Password correct:", user_obj.check_password(password))
-            print("Password hash:", user_obj.password)
-        else:
-            print("User exists: NO")
-
         user = authenticate(
             request,
-            username=username,
-            password=password
+            username=request.POST.get("username"),
+            password=request.POST.get("password"),
         )
 
-        print("authenticate() returned:", user)
-        print("================================\n")
+        if user:
+            return HttpResponse("AUTHENTICATED")
 
-        if user is not None:
-            login(request, user)
-
-            if user.role == "ADMIN":
-                return redirect("admin_dashboard")
-
-            return redirect("driver_dashboard")
-
-        return render(request, "login.html", {
-            "error": "Invalid credentials"
-        })
+        return HttpResponse("NOT AUTHENTICATED")
 
     return render(request, "login.html")
 def logout_view(request):
