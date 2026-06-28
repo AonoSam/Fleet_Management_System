@@ -35,6 +35,7 @@ def landing(request):
 from django.contrib.auth import authenticate, login, get_user_model
 
 def login_view(request):
+    raise Exception("LOGIN VIEW VERSION 1")
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "")
