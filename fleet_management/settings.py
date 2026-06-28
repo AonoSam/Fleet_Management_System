@@ -1,20 +1,33 @@
 """
 Django settings for fleet_management project.
 """
+import os
+
 
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-f2c3$5tc4%4wb65+xf!(fjg=lwzq7%-j_(3#(+65g2xz9ky)ua'
 
-DEBUG = True
+
+# ================================
+# SECURITY
+# ================================
+SECRET_KEY = os.getenv(
+    "SECRET_KEY",
+    "django-insecure-dev-key"
+)
+
+# False on Vercel / production
+DEBUG = os.getenv("VERCEL") is None
 
 ALLOWED_HOSTS = [
-    '127.0.0.1',
-    'localhost',
-    'repose-catfish-starlet.ngrok-free.dev',
+    ".vercel.app",
+    "localhost",
+    "127.0.0.1",
 ]
+
+
 
 
 INSTALLED_APPS = [
