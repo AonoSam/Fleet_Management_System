@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  .form-card {
+    max-width:620px; margin:0 auto;
+    background:#fff; border:1px solid #e2e8f0;
+    border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden;
+  }
+  .form-card-head {
+    padding:16px 24px; border-bottom:1px solid #e2e8f0;
+    background:#f8fafc; display:flex; align-items:center; justify-content:space-between;
+  }
+  .form-card-head h5 { font-weight:800; font-size:1rem; margin:0; color:#0f172a; }
+  .form-card-body { padding:24px; }
+  .form-actions {
+    padding:16px 24px; border-top:1px solid #e2e8f0;
+    background:#f8fafc; display:flex; gap:10px; justify-content:flex-end;
+  }
+  .field-group { margin-bottom:18px; }
+  .field-group label {
+    display:block; font-size:.78rem; font-weight:700;
+    color:#0f172a; margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em;
+  }
+  .field-group input,
+  .field-group select {
+    width:100%; border:1.5px solid #e2e8f0; border-radius:8px;
+    padding:10px 14px; font-size:.9rem; color:#0f172a;
+    background:#f8fafc; outline:none; transition:border-color .15s, box-shadow .15s;
+  }
+  .field-group input:focus,
+  .field-group select:focus {
+    border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); background:#fff;
+  }
+  .field-hint { font-size:.75rem; color:#64748b; margin-top:4px; }
+  .form-grid  { display:grid; grid-template-columns:1fr 1fr; gap:0 18px; }
+  @media(max-width:600px){ .form-grid { grid-template-columns:1fr; } }
+
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:8px; border:none; font-size:.875rem; font-weight:600; cursor:pointer; text-decoration:none; transition:opacity .15s; }
+  .btn:hover { opacity:.85; }
+  .btn-primary   { background:#1E3A8A; color:#fff; }
+  .btn-secondary { background:#f1f5f9; color:#0f172a; border:1px solid #e2e8f0; }
+
+  .user-info-bar {
+    display:flex; align-items:center; gap:14px;
+    background:#f0f7ff; border:1px solid #bfdbfe;
+    border-radius:10px; padding:14px 18px; margin-bottom:22px;
+  }
+  .ui-avatar {
+    width:46px; height:46px; border-radius:50%;
+    background:#1E3A8A; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.1rem; font-weight:800; flex-shrink:0;
+  }
+  .ui-name  { font-weight:700; font-size:.95rem; }
+  .ui-meta  { font-size:.78rem; color:#64748b; margin-top:2px; }
+</style>
+
+
+<div class="form-card">
+  <div class="form-card-head">
+    <h5>✏️ Edit User</h5>
+    <a href="{% url 'user_list' %}" class="btn btn-secondary" style="padding:6px 12px;font-size:.8rem;">← Back</a>
+  </div>
+
+  <div class="form-card-body">
+
+    <!-- User info bar -->
+    <div class="user-info-bar">
+      <div class="ui-avatar">{{ u.username|first|upper }}</div>
+      <div>
+        <div class="ui-name">{{ u.username }}</div>
+        <div class="ui-meta">
+          {{ u.role }} &nbsp;·&nbsp;
+          Joined {{ u.date_joined|date:"M d, Y" }}
+          {% if not u.is_active %}&nbsp;·&nbsp; <span style="color:#dc2626;font-weight:700;">⚠ Blocked</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% if messages %}
+      {% for msg in messages %}
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:.86rem;color:#dc2626;">
+          {{ msg }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+
+      <div class="form-grid">
+
+        <div class="field-group">
+          <label>Username *</label>
+          <input type="text" name="username" value="{{ u.username }}" required>
+        </div>
+
+        <div class="field-group">
+          <label>Role *</label>
+          <select name="role">
+            <option value="ADMIN" {% if u.role == 'ADMIN' %}selected{% endif %}>Admin</option>
+            <option value="DRIVER" {% if u.role == 'DRIVER' %}selected{% endif %}>Driver</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label>First Name</label>
+          <input type="text" name="first_name" value="{{ u.first_name }}">
+        </div>
+
+        <div class="field-group">
+          <label>Last Name</label>
+          <input type="text" name="last_name" value="{{ u.last_name }}">
+        </div>
+
+        <div class="field-group">
+          <label>Phone Number</label>
+          <input type="text" name="phone_number" value="{{ u.phone_number|default:'' }}" placeholder="07XXXXXXXX">
+        </div>
+
+        <div class="field-group">
+          <label>New Password</label>
+          <input type="password" name="new_password" placeholder="Leave blank to keep current">
+          <div class="field-hint">Only fill this if you want to change the password.</div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="form-actions">
+      <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

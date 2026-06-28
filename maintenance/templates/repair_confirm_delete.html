@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  .delete-card {
+    max-width: 480px; margin: 60px auto;
+    background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.09);
+    overflow: hidden;
+  }
+  .delete-card-head {
+    background: #fef2f2; padding: 20px 24px;
+    border-bottom: 1px solid #fecaca;
+    font-weight: 700; font-size: 1rem; color: #991b1b;
+  }
+  .delete-card-body { padding: 24px; }
+  .repair-summary {
+    background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 9px; padding: 14px 16px; margin: 16px 0; font-size: .88rem;
+  }
+  .repair-summary .rs-row { display: flex; justify-content: space-between; padding: 5px 0; }
+  .repair-summary .rs-row .k { color: #64748b; }
+  .repair-summary .rs-row .v { font-weight: 600; color: #0f172a; }
+</style>
+
+<div class="delete-card">
+  <div class="delete-card-head">⚠️ Delete Repair Log</div>
+  <div class="delete-card-body">
+    <p style="color:#64748b;font-size:.9rem;">
+      Are you sure you want to permanently delete this repair record? This action cannot be undone.
+    </p>
+    <div class="repair-summary">
+      <div class="rs-row"><span class="k">Vehicle</span><span class="v">{{ repair.vehicle.number_plate }}</span></div>
+      <div class="rs-row"><span class="k">Category</span><span class="v">{{ repair.get_category_display }}</span></div>
+      <div class="rs-row"><span class="k">Mechanic</span><span class="v">{{ repair.mechanic|default:"—" }}</span></div>
+      <div class="rs-row"><span class="k">Cost</span><span class="v">KES {{ repair.cost|floatformat:2 }}</span></div>
+      <div class="rs-row"><span class="k">Progress</span><span class="v">{{ repair.get_progress_display }}</span></div>
+    </div>
+    <form method="POST" style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+      {% csrf_token %}
+      <a href="{% url 'repair_logs' %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+      <button type="submit" class="btn btn-danger btn-sm">Yes, Delete</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

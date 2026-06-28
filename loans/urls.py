@@ -7,7 +7,8 @@ from .views import (
     my_loans,
     approve_loan,
     reject_loan,
-    repay_loan
+    repay_loan,
+    apply_credit
 )
 
 urlpatterns = [
@@ -24,6 +25,7 @@ urlpatterns = [
     path('<int:pk>/approve/', approve_loan, name='approve_loan'),
     path('<int:pk>/reject/', reject_loan, name='reject_loan'),
     path('<int:pk>/repay/', repay_loan, name='repay_loan'),
+    path('<int:pk>/apply-credit/', apply_credit, name='apply_credit'),
 
     path('my-loans/', my_loans, name='my_loans'),
 ]

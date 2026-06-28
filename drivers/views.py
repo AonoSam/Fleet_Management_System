@@ -144,3 +144,4 @@ def my_vehicle(request):
     return render(request, 'my_vehicle.html', {
         'vehicle': vehicle
     })
+

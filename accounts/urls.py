@@ -2,13 +2,28 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+<<<<<<< HEAD
     
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+=======
+    path('login/',   views.login_view,  name='login'),
+    path('logout/',  views.logout_view, name='logout'),
+>>>>>>> c0367f47e91f1327e1733b6b75897017ca7fc7bb
 
-    path('users/', views.user_list, name='user_list'),
-    path('create-user/', views.create_user_view, name='create_user'),
+    # User management
+    path('users/',                views.user_list,       name='user_list'),
+    path('create-user/',          views.create_user_view, name='create_user'),
+    path('edit-user/<int:pk>/',   views.edit_user,       name='edit_user'),
+    path('delete-user/<int:pk>/', views.delete_user,     name='delete_user'),
 
-    path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    # Dashboards
+    path('admin-dashboard/',  views.admin_dashboard,  name='admin_dashboard'),
     path('driver-dashboard/', views.driver_dashboard, name='driver_dashboard'),
+
+    # Session management
+    path('active-users/',              views.active_users,      name='active_users'),
+    path('force-logout/<int:pk>/',     views.force_logout_user, name='force_logout_user'),
+    path('block-user/<int:pk>/',       views.block_user,        name='block_user'),
+    path('unblock-user/<int:pk>/',     views.unblock_user,      name='unblock_user'),
 ]

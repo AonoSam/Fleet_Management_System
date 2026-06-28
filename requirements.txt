@@ -1,0 +1,17 @@
+<<<<<<< HEAD
+=======
+python manage.py shell
+
+from accounts.models import User
+
+User.objects.create_user(
+    username='admin1',
+    password='admin123',
+    role='ADMIN'
+)
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://localhost:8000",
+    "https://your-codespace-name-8000.app.github.dev",
+]
+>>>>>>> c0367f47e91f1327e1733b6b75897017ca7fc7bb

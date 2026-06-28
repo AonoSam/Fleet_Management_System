@@ -10,7 +10,11 @@ SECRET_KEY = 'django-insecure-f2c3$5tc4%4wb65+xf!(fjg=lwzq7%-j_(3#(+65g2xz9ky)ua
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'repose-catfish-starlet.ngrok-free.dev',
+]
 
 
 INSTALLED_APPS = [
@@ -25,7 +29,7 @@ INSTALLED_APPS = [
     'accounts',
     'loans',
     'drivers',
-    'maintainance',
+    'maintenance',
     'notifications',
     'payments',
     'reports',
@@ -87,8 +91,13 @@ TIME_ZONE = 'Africa/Nairobi'   # ✅ FIXED (important for real system)
 USE_I18N = True
 USE_TZ = True
 
+# Static files (CSS, JavaScript, Images)
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -98,29 +107,9 @@ AUTH_USER_MODEL = 'accounts.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ==============================
-# 🔥 CALLBACK CONFIGURATION
-# ==============================
-
-# ⚠️ IMPORTANT:
-# These MUST be publicly accessible URLs in production (NOT localhost)
-
-MPESA_CALLBACK_URL = "https://freddy-porkiest-rumblingly.ngrok-free.dev/mpesa/callback/"
-MPESA_TIMEOUT_URL = "https://yourdomain.com/payments/mpesa/timeout/"
-
-# ==============================
-# 🔥 SECURITY + FORMAT RULES
-# ==============================
-
-MPESA_COUNTRY_CODE = "254"
-
-# Force consistent phone normalization across system
-MPESA_PHONE_FORMAT = "E164"  # internal standard
-
-# ==============================
-# 🔥 DEBUG HELP (SAFE FOR DEV)
-# ==============================
-
-MPESA_DEBUG = True
 
 
+# ── Auto logout after 5 minutes of inactivity ──
+SESSION_COOKIE_AGE = 300              # 5 minutes in seconds
+SESSION_SAVE_EVERY_REQUEST = True     # reset timer on every request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # also logout when browser closes

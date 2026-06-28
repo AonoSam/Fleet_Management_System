@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="delete-card">
+  <div class="delete-card-head">⚠️ Delete Maintenance Plan</div>
+  <div class="delete-card-body">
+    <p style="color:var(--text-muted);font-size:.9rem;">
+      Are you sure you want to delete the maintenance plan for
+      <strong>{{ plan.vehicle.number_plate }}</strong>? Future maintenance
+      will no longer be auto-scheduled for this vehicle.
+    </p>
+    <form method="POST" style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      {% csrf_token %}
+      <a href="{% url 'maintenance_plans' %}" class="btn btn-secondary btn-sm">Cancel</a>
+      <button type="submit" class="btn btn-danger btn-sm">Yes, Delete</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

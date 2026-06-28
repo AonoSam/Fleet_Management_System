@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="form-card">
+  <div class="form-card-head">
+    <h5>{% if plan %}✏️ Edit Maintenance Plan{% else %}📅 New Maintenance Plan{% endif %}</h5>
+    <a href="{% url 'maintenance_plans' %}" class="btn btn-secondary btn-sm">← Back</a>
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    <div class="form-card-body">
+
+      {% if not plan %}
+      <div class="field-group">
+        <label>Vehicle *</label>
+        <select name="vehicle" required>
+          <option value="">— Select vehicle —</option>
+          {% for v in vehicles %}
+            <option value="{{ v.id }}">{{ v.number_plate }} — {{ v.model }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% else %}
+      <div class="field-group">
+        <label>Vehicle</label>
+        <div class="number-plate">{{ plan.vehicle.number_plate }}</div>
+      </div>
+      {% endif %}
+
+      <div class="field-group">
+        <label>Maintenance Interval (days) *</label>
+        <input type="number" name="interval_days" min="1"
+               value="{{ plan.interval_days|default:90 }}" required>
+        <div class="field-hint">e.g. 90 for quarterly service, 30 for monthly checks.</div>
+      </div>
+
+      <div class="field-group">
+        <label>Default Description</label>
+        <input type="text" name="default_description"
+               value="{{ plan.default_description|default:'Routine scheduled maintenance' }}"
+               placeholder="e.g. Oil change and full inspection">
+      </div>
+
+      {% if not plan %}
+      <div class="field-group">
+        <label>Start Date</label>
+        <input type="date" name="start_date">
+        <div class="field-hint">Leave blank to start counting from today. The first schedule will be generated immediately.</div>
+      </div>
+      {% else %}
+      <div class="field-group">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" name="is_active" {% if plan.is_active %}checked{% endif %} style="width:auto;">
+          Plan Active
+        </label>
+        <div class="field-hint">Uncheck to pause auto-generation of future schedules for this vehicle.</div>
+      </div>
+      {% endif %}
+
+    </div>
+    <div class="form-actions">
+      <a href="{% url 'maintenance_plans' %}" class="btn btn-secondary btn-sm">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-sm">
+        {% if plan %}Save Changes{% else %}Create Plan{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

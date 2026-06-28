@@ -1,115 +1,127 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<h2 class="mb-4">Loan Details</h2>
-
-<div class="row">
-
-    <!-- LOAN INFO -->
-    <div class="col-md-6">
-        <div class="card p-3 shadow-sm">
-
-            <h5>Loan Information</h5>
-
-            <p><strong>Borrower:</strong> {{ loan.driver.username|default:"Company" }}</p>
-
-            <p><strong>Principal:</strong> KSh {{ loan.amount|floatformat:2 }}</p>
-
-            <p><strong>Interest:</strong> {{ loan.interest_rate }}%</p>
-
-            <p><strong>Status:</strong> {{ loan.status }}</p>
-
-            <p><strong>Due Date:</strong> {{ loan.due_date|default:"---" }}</p>
-
-        </div>
+<div class="page-header">
+  <div>
+    <div class="page-title">🏦 Loan Details</div>
+    <div class="page-sub">
+      {% if loan.loan_type == 'BANK' %}Bank Loan{% else %}Driver Loan{% endif %}
+      &nbsp;·&nbsp; {{ loan.driver.username|default:"Company" }}
     </div>
+  </div>
+  <a href="{% if request.user.role == 'ADMIN' %}{% url 'loan_list' %}{% else %}{% url 'my_loans' %}{% endif %}"
+     class="btn btn-secondary btn-sm">← Back</a>
+</div>
 
-    <!-- FINANCIAL -->
-    <div class="col-md-6">
-        <div class="card p-3 shadow-sm">
+<div class="row g-4 mb-4">
 
-            <h5>Financial Summary</h5>
-
-            <p><strong>Total Payable:</strong> KSh {{ total_amount|floatformat:2 }}</p>
-
-            <p><strong>Total Paid:</strong> KSh {{ loan.total_paid|floatformat:2 }}</p>
-
-            <p><strong>Balance:</strong> 
-                <span class="{% if loan.balance > 0 %}text-danger{% else %}text-success{% endif %}">
-                    KSh {{ loan.balance|floatformat:2 }}
-                </span>
-            </p>
-
-        </div>
+  <!-- LOAN INFO -->
+  <div class="col-6">
+    <div class="card card-p">
+      <h5>Loan Information</h5>
+      <div class="vrow"><span class="k">Borrower</span><span class="v">{{ loan.driver.username|default:"Company" }}</span></div>
+      <div class="vrow"><span class="k">Type</span><span class="v">{{ loan.get_loan_type_display }}</span></div>
+      <div class="vrow"><span class="k">Principal</span><span class="v">KSh {{ loan.amount|floatformat:2 }}</span></div>
+      <div class="vrow"><span class="k">Interest Rate</span><span class="v">{{ loan.interest_rate }}%</span></div>
+      <div class="vrow">
+        <span class="k">Status</span>
+        <span class="v">
+          <span class="badge
+            {% if loan.status == 'ACTIVE' %}bg-primary
+            {% elif loan.status == 'PAID' %}bg-success
+            {% elif loan.status == 'REJECTED' %}bg-danger
+            {% else %}bg-warning{% endif %}">
+            {{ loan.get_status_display }}
+          </span>
+        </span>
+      </div>
+      <div class="vrow"><span class="k">Due Date</span><span class="v">{{ loan.due_date|default:"—" }}</span></div>
     </div>
+  </div>
+
+  <!-- FINANCIAL -->
+  <div class="col-6">
+    <div class="card card-p">
+      <h5>Financial Summary</h5>
+      <div class="vrow"><span class="k">Total Payable</span><span class="v">KSh {{ total_amount|floatformat:2 }}</span></div>
+      <div class="vrow"><span class="k">Total Paid</span><span class="v" style="color:#10b981;">KSh {{ loan.total_paid|floatformat:2 }}</span></div>
+      <div class="vrow">
+        <span class="k">Balance</span>
+        <span class="v" style="{% if loan.balance > 0 %}color:#ef4444;{% else %}color:#10b981;{% endif %}">
+          KSh {{ loan.display_balance|floatformat:2 }}
+        </span>
+      </div>
+      {% if loan.driver %}
+      <div class="vrow">
+        <span class="k">{{ loan.driver.username }}'s Credit Balance</span>
+        <span class="v" style="color:{% if available_credit > 0 %}#10b981{% else %}var(--text-muted){% endif %};font-weight:700;">
+          KSh {{ available_credit|floatformat:2 }}
+        </span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
 
 </div>
+
+
+<!-- APPLY CREDIT (admin only) -->
+{% if request.user.role == 'ADMIN' and loan.driver and loan.status == 'ACTIVE' and available_credit > 0 %}
+<div class="alert alert-success mb-4" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+  <div>
+    💰 <strong>{{ loan.driver.username }}</strong> has <strong>KSh {{ available_credit|floatformat:2 }}</strong>
+    in unused credit from a previous overpayment. You can apply it to this loan now.
+  </div>
+  <form method="POST" action="{% url 'apply_credit' loan.id %}"
+        onsubmit="return confirm('Apply available credit to this loan?')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-success btn-sm">Apply Credit Now</button>
+  </form>
+</div>
+{% endif %}
+
 
 <!-- REPAYMENT HISTORY -->
-<div class="card mt-3 p-3">
-
-    <h5>Repayments</h5>
-
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Amount</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for r in loan.repayments.all %}
-            <tr>
-                <td>KSh {{ r.amount }}</td>
-                <td>{{ r.paid_at }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="2">No repayments yet</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
+<div class="table-card mb-4">
+  <div class="table-card-head">💳 Repayment History</div>
+  {% if loan.repayments.all %}
+  <table>
+    <thead>
+      <tr><th>Amount</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for r in loan.repayments.all %}
+      <tr>
+        <td style="font-weight:700;color:#10b981;">KSh {{ r.amount|floatformat:2 }}</td>
+        <td style="color:var(--text-muted);">{{ r.paid_at|date:"M d, Y H:i" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty-state">No repayments recorded yet.</div>
+  {% endif %}
 </div>
+
 
 <!-- REPAYMENT FORM -->
 {% if loan.status == 'ACTIVE' %}
-<div class="card mt-3 p-3">
+  {% if request.user.role == 'ADMIN' or loan.driver == request.user %}
+  <div class="card card-p">
+    <h5 class="mb-3">💰 Make a Repayment</h5>
 
-    <h5>Make Repayment (MPESA / Manual)</h5>
+    {% if loan.loan_type == 'BANK' %}
+      <div class="alert alert-info mb-3">
+        Bank loans can currently only be repaid <strong>manually / cash</strong>.
+        Direct integration with KCB/Equity is coming soon.
+      </div>
+    {% endif %}
 
-    <form method="post" action="{% url 'repay_loan' loan.id %}">
-        {% csrf_token %}
-
-        <div class="row">
-
-            <div class="col-md-4">
-                <input type="number" name="amount" step="0.01"
-                       class="form-control"
-                       placeholder="Amount"
-                       required>
-            </div>
-
-            <div class="col-md-4">
-                <input type="text" name="reference"
-                       class="form-control"
-                       placeholder="MPESA Code (optional)">
-            </div>
-
-            <div class="col-md-4">
-                <button class="btn btn-success w-100">
-                    Pay Now
-                </button>
-            </div>
-
-        </div>
-
-    </form>
-
-</div>
+    <a href="{% url 'repay_loan' loan.id %}" class="btn btn-success">
+      Go to Repayment Form →
+    </a>
+  </div>
+  {% endif %}
 {% endif %}
 
 {% endblock %}

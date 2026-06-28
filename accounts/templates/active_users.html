@@ -1,0 +1,475 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --radius: 12px; --border: #e2e8f0; --surface: #fff;
+    --surface-2: #f8fafc; --text-main: #0f172a; --text-muted: #64748b;
+    --blue: #1E3A8A; --orange: #F97316;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+  }
+  .page-title { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0; }
+  .page-sub   { font-size: .85rem; color: var(--text-muted); margin-top: 3px; }
+
+  /* ── Stat strip ── */
+  .stat-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+    gap: 14px; margin-bottom: 28px;
+  }
+  .strip-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .strip-icon { font-size: 1.4rem; margin-bottom: 8px; }
+  .strip-val  { font-size: 1.7rem; font-weight: 800; color: var(--text-main); line-height: 1; }
+  .strip-label { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+
+  /* ── Section card ── */
+  .section-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    overflow: hidden; margin-bottom: 24px;
+  }
+  .card-head {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-head h6 {
+    font-weight: 700; font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .07em; color: var(--text-main); margin: 0;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-meta { font-size: .76rem; color: var(--text-muted); }
+
+  /* ── Table ── */
+  table.st { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  table.st th {
+    padding: 11px 16px; background: var(--surface-2);
+    border-bottom: 1px solid var(--border); font-size: .73rem;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted); font-weight: 600; text-align: left;
+    white-space: nowrap;
+  }
+  table.st td {
+    padding: 13px 16px; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  table.st tr:last-child td { border-bottom: none; }
+  table.st tr:hover td { background: #fafbfc; }
+  table.st tr.blocked-row td { background: #fef9f9; opacity: .75; }
+
+  /* ── Avatar ── */
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .95rem; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .av-admin  { background: var(--blue); }
+  .av-driver { background: #0891b2; }
+  .av-blocked { background: #94a3b8; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 99px;
+    font-size: .71rem; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .b-online   { background: #d1fae5; color: #065f46; }
+  .b-offline  { background: #f1f5f9; color: #64748b; }
+  .b-blocked  { background: #fee2e2; color: #991b1b; }
+  .b-admin    { background: #dbeafe; color: #1e40af; }
+  .b-driver   { background: #ede9fe; color: #5b21b6; }
+  .b-active-acct  { background: #d1fae5; color: #065f46; }
+  .b-inactive-acct { background: #fee2e2; color: #991b1b; }
+
+  /* ── Live dot ── */
+  .live-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #10b981; flex-shrink: 0;
+    animation: blink 1.5s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+  /* ── Action buttons ── */
+  .act-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 11px; border-radius: 7px; border: none;
+    font-size: .76rem; font-weight: 600; cursor: pointer;
+    text-decoration: none; transition: opacity .15s, transform .15s;
+    white-space: nowrap;
+  }
+  .act-btn:hover { opacity: .85; transform: translateY(-1px); }
+  .act-logout { background: #fff3cd; color: #92400e; border: 1px solid #fde68a; }
+  .act-block  { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+  .act-unblock { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+  .act-view   { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+
+  .actions-wrap { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+  /* ── UA truncate ── */
+  .ua-text {
+    max-width: 200px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    font-size: .75rem; color: var(--text-muted);
+  }
+
+  /* ── Empty ── */
+  .empty-state { text-align: center; padding: 32px; color: var(--text-muted); font-size: .86rem; }
+  .empty-state .ei { font-size: 2.2rem; margin-bottom: 10px; }
+
+  /* ── Tab nav ── */
+  .tab-nav {
+    display: flex; gap: 4px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 4px; margin-bottom: 24px; width: fit-content;
+  }
+  .tab-btn {
+    padding: 8px 18px; border-radius: 9px; border: none;
+    font-size: .84rem; font-weight: 600; cursor: pointer;
+    background: transparent; color: var(--text-muted);
+    transition: background .15s, color .15s;
+  }
+  .tab-btn.active { background: var(--surface); color: var(--text-main); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
+  /* ── Info tooltip on UA ── */
+  [title] { cursor: help; }
+
+  /* ── Refresh badge ── */
+  .refresh-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 99px; padding: 5px 12px;
+    font-size: .76rem; color: var(--text-muted); font-weight: 500;
+  }
+  .refresh-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--orange); animation: blink 2s infinite;
+  }
+</style>
+
+
+<!-- ── PAGE HEADER ── -->
+<div class="page-header">
+  <div>
+    <div class="page-title">👥 User Management & Sessions</div>
+    <div class="page-sub">Monitor activity, manage access and control user sessions in real time</div>
+  </div>
+  <div class="refresh-badge">
+    <span class="refresh-dot"></span>
+    Auto-refreshes every 60s
+  </div>
+</div>
+
+
+<!-- ── STAT STRIP ── -->
+<div class="stat-strip">
+  <div class="strip-card">
+    <div class="strip-icon">👥</div>
+    <div class="strip-val">{{ total_users }}</div>
+    <div class="strip-label">Total Users</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-icon">🟢</div>
+    <div class="strip-val" style="color:#10b981;">{{ active_count }}</div>
+    <div class="strip-label">Currently Online</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-icon">📋</div>
+    <div class="strip-val">{{ sessions_today }}</div>
+    <div class="strip-label">Sessions Today</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-icon">🚫</div>
+    <div class="strip-val" style="color:#ef4444;">{{ blocked_users }}</div>
+    <div class="strip-label">Blocked Users</div>
+  </div>
+</div>
+
+
+<!-- ── TAB NAVIGATION ── -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('all-users', this)">All Users</button>
+  <button class="tab-btn" onclick="showTab('live-sessions', this)">Live Sessions</button>
+  <button class="tab-btn" onclick="showTab('recent-sessions', this)">Recent Activity</button>
+</div>
+
+
+<!-- ══ TAB 1: ALL USERS ══ -->
+<div id="all-users" class="tab-content">
+  <div class="section-card">
+    <div class="card-head">
+      <h6>👤 All Registered Users</h6>
+      <span class="card-meta">{{ total_users }} total · {{ blocked_users }} blocked</span>
+    </div>
+
+    {% if all_users %}
+    <table class="st">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Phone</th>
+          <th>Account Status</th>
+          <th>Online Now</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in all_users %}
+        <tr class="{% if not u.is_active %}blocked-row{% endif %}">
+
+          <!-- User -->
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="avatar {% if not u.is_active %}av-blocked{% elif u.role == 'ADMIN' %}av-admin{% else %}av-driver{% endif %}">
+                {{ u.username|first|upper }}
+              </div>
+              <div>
+                <div style="font-weight:700;">{{ u.username }}</div>
+                <div style="font-size:.75rem;color:var(--text-muted);">
+                  {{ u.get_full_name|default:"—" }}
+                </div>
+              </div>
+            </div>
+          </td>
+
+          <!-- Role -->
+          <td>
+            <span class="badge {% if u.role == 'ADMIN' %}b-admin{% else %}b-driver{% endif %}">
+              {{ u.role }}
+            </span>
+          </td>
+
+          <!-- Phone -->
+          <td style="font-size:.82rem;color:var(--text-muted);">
+            {{ u.phone_number|default:"—" }}
+          </td>
+
+          <!-- Account Status -->
+          <td>
+            {% if u.is_active %}
+              <span class="badge b-active-acct">✓ Active</span>
+            {% else %}
+              <span class="badge b-blocked">✕ Blocked</span>
+            {% endif %}
+          </td>
+
+          <!-- Online Now -->
+          <td>
+            {% if u.id in online_user_ids %}
+              <span class="badge b-online">
+                <span class="live-dot"></span> Online
+              </span>
+            {% else %}
+              <span class="badge b-offline">Offline</span>
+            {% endif %}
+          </td>
+
+          <!-- Actions -->
+          <td>
+            <div class="actions-wrap">
+              {% if u != request.user %}
+
+                {% if u.id in online_user_ids %}
+                <form method="POST" action="{% url 'force_logout_user' u.pk %}"
+                      onsubmit="return confirm('Force logout {{ u.username }}?')">
+                  {% csrf_token %}
+                  <button type="submit" class="act-btn act-logout">⏏ Force Logout</button>
+                </form>
+                {% endif %}
+
+                {% if u.is_active %}
+                <form method="POST" action="{% url 'block_user' u.pk %}"
+                      onsubmit="return confirm('Block {{ u.username }}? They will be logged out immediately.')">
+                  {% csrf_token %}
+                  <button type="submit" class="act-btn act-block">🚫 Block</button>
+                </form>
+                {% else %}
+                <form method="POST" action="{% url 'unblock_user' u.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="act-btn act-unblock">✅ Unblock</button>
+                </form>
+                {% endif %}
+
+              {% else %}
+                <span style="font-size:.76rem;color:var(--text-muted);">— You —</span>
+              {% endif %}
+            </div>
+          </td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="empty-state"><div class="ei">👤</div>No users found.</div>
+    {% endif %}
+  </div>
+</div>
+
+
+<!-- ══ TAB 2: LIVE SESSIONS ══ -->
+<div id="live-sessions" class="tab-content" style="display:none;">
+  <div class="section-card">
+    <div class="card-head">
+      <h6><span class="live-dot"></span> Currently Logged In</h6>
+      <span class="card-meta">{{ active_count }} active session{{ active_count|pluralize }}</span>
+    </div>
+
+    {% if active_sessions %}
+    <table class="st">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Login Time</th>
+          <th>Duration</th>
+          <th>IP Address</th>
+          <th>Browser / Device</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in active_sessions %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="avatar {% if s.user.role == 'ADMIN' %}av-admin{% else %}av-driver{% endif %}">
+                {{ s.user.username|first|upper }}
+              </div>
+              <div>
+                <div style="font-weight:700;">{{ s.user.username }}</div>
+                <div style="font-size:.75rem;color:var(--text-muted);">{{ s.user.get_full_name }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge {% if s.user.role == 'ADMIN' %}b-admin{% else %}b-driver{% endif %}">
+              {{ s.user.role }}
+            </span>
+          </td>
+          <td style="color:var(--text-muted);">
+            {{ s.login_time|date:"M d, Y" }}<br>
+            <span style="font-size:.76rem;">{{ s.login_time|date:"H:i:s" }}</span>
+          </td>
+          <td style="font-weight:700;">{{ s.duration }}</td>
+          <td style="font-family:monospace;font-size:.8rem;">
+            {{ s.ip_address|default:"—" }}
+          </td>
+          <td>
+            <div class="ua-text" title="{{ s.user_agent }}">
+              {{ s.user_agent|default:"—" }}
+            </div>
+          </td>
+          <td>
+            {% if s.user != request.user %}
+            <form method="POST" action="{% url 'force_logout_user' s.user.pk %}"
+                  onsubmit="return confirm('Force logout {{ s.user.username }}?')">
+              {% csrf_token %}
+              <button type="submit" class="act-btn act-logout">⏏ Force Logout</button>
+            </form>
+            {% else %}
+              <span style="font-size:.76rem;color:var(--text-muted);">— You —</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="empty-state"><div class="ei">🟢</div>No active sessions right now.</div>
+    {% endif %}
+  </div>
+</div>
+
+
+<!-- ══ TAB 3: RECENT SESSIONS ══ -->
+<div id="recent-sessions" class="tab-content" style="display:none;">
+  <div class="section-card">
+    <div class="card-head">
+      <h6>🕐 Session History — Last 24 Hours</h6>
+      <span class="card-meta">{{ recent_sessions|length }} sessions</span>
+    </div>
+
+    {% if recent_sessions %}
+    <table class="st">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Login</th>
+          <th>Logout</th>
+          <th>Duration</th>
+          <th>IP Address</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in recent_sessions %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="avatar {% if s.user.role == 'ADMIN' %}av-admin{% else %}av-driver{% endif %}">
+                {{ s.user.username|first|upper }}
+              </div>
+              <div style="font-weight:600;">{{ s.user.username }}</div>
+            </div>
+          </td>
+          <td>
+            <span class="badge {% if s.user.role == 'ADMIN' %}b-admin{% else %}b-driver{% endif %}">
+              {{ s.user.role }}
+            </span>
+          </td>
+          <td style="color:var(--text-muted);font-size:.82rem;">
+            {{ s.login_time|date:"M d, H:i" }}
+          </td>
+          <td style="color:var(--text-muted);font-size:.82rem;">
+            {% if s.logout_time %}{{ s.logout_time|date:"M d, H:i" }}{% else %}—{% endif %}
+          </td>
+          <td style="font-weight:600;">{{ s.duration }}</td>
+          <td style="font-family:monospace;font-size:.8rem;">
+            {{ s.ip_address|default:"—" }}
+          </td>
+          <td>
+            {% if s.is_active %}
+              <span class="badge b-online"><span class="live-dot"></span> Online</span>
+            {% else %}
+              <span class="badge b-offline">Offline</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="empty-state"><div class="ei">📋</div>No sessions in the last 24 hours.</div>
+    {% endif %}
+  </div>
+</div>
+
+
+<script>
+  // Tab switching
+  function showTab(id, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).style.display = 'block';
+    btn.classList.add('active');
+  }
+
+  // Auto-refresh every 60 seconds
+  setTimeout(() => window.location.reload(), 60000);
+</script>
+
+{% endblock %}

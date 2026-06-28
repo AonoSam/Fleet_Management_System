@@ -3,6 +3,8 @@ import requests
 from datetime import datetime
 from django.conf import settings
 
+from payments.phone_utils import normalize_phone, InvalidPhoneNumberError
+
 
 class MpesaClient:
 
@@ -20,17 +22,13 @@ class MpesaClient:
         )
 
     # -------------------------
-    # NORMALIZE PHONE (IMPORTANT FIX)
+    # NORMALIZE PHONE
+    # Delegates to the shared utility — no longer has its own
+    # incomplete logic that only handled "0" and "+254" prefixes
+    # without validating the actual network prefix (07/01).
     # -------------------------
     def normalize_phone(self, phone):
-        """
-        Converts 07XXXXXXXX → 2547XXXXXXXX
-        """
-        if phone.startswith("0"):
-            return "254" + phone[1:]
-        if phone.startswith("+254"):
-            return phone[1:]
-        return phone
+        return normalize_phone(phone)
 
     # -------------------------
     # GET ACCESS TOKEN
@@ -60,6 +58,15 @@ class MpesaClient:
     def stk_push(self, phone_number, amount, reference, callback_url):
 
         try:
+            # ── Validate & normalize before anything else ──
+            try:
+                phone_number = self.normalize_phone(phone_number)
+            except InvalidPhoneNumberError as e:
+                return {
+                    "success": False,
+                    "message": str(e)
+                }
+
             access_token = self.get_access_token()
 
             if not access_token:
@@ -67,8 +74,6 @@ class MpesaClient:
                     "success": False,
                     "message": "Unable to generate access token"
                 }
-
-            phone_number = self.normalize_phone(phone_number)
 
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 

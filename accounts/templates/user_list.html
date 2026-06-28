@@ -1,14 +1,262 @@
 {% extends 'base.html' %}
-
 {% block content %}
 
-<h2>Users</h2>
-<a href="{% url 'create_user' %}">Create User</a>
+<style>
+  :root {
+    --radius:12px; --border:#e2e8f0; --surface:#fff;
+    --surface-2:#f8fafc; --text-main:#0f172a; --text-muted:#64748b;
+    --blue:#1E3A8A; --orange:#F97316;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.08);
+    --shadow-md:0 4px 16px rgba(0,0,0,.09);
+  }
 
-<ul>
-    {% for user in users %}
-        <li>{{ user.username }} - {{ user.role }}</li>
-    {% endfor %}
-</ul>
+  .page-header {
+    display:flex; justify-content:space-between; align-items:flex-start;
+    margin-bottom:28px; flex-wrap:wrap; gap:12px;
+  }
+  .page-title { font-size:1.4rem; font-weight:800; color:var(--text-main); margin:0; }
+  .page-sub   { font-size:.85rem; color:var(--text-muted); margin-top:3px; }
+
+  .stat-strip {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:12px; margin-bottom:24px;
+  }
+  .strip-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm);
+  }
+  .strip-val   { font-size:1.6rem; font-weight:800; color:var(--text-main); line-height:1; }
+  .strip-label { font-size:.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin-top:4px; }
+
+  .table-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); box-shadow:var(--shadow-sm); overflow:hidden;
+  }
+  .table-card-head {
+    padding:14px 20px; border-bottom:1px solid var(--border);
+    background:var(--surface-2);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .table-card-head h6 {
+    font-weight:700; font-size:.8rem; text-transform:uppercase;
+    letter-spacing:.07em; color:var(--text-main); margin:0;
+  }
+
+  table { width:100%; border-collapse:collapse; font-size:.875rem; }
+  thead th {
+    padding:11px 16px; background:var(--surface-2);
+    border-bottom:1px solid var(--border); font-size:.73rem;
+    text-transform:uppercase; letter-spacing:.06em;
+    color:var(--text-muted); font-weight:600; text-align:left; white-space:nowrap;
+  }
+  tbody td {
+    padding:13px 16px; border-bottom:1px solid var(--border); vertical-align:middle;
+  }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover td { background:#fafbfc; }
+  tbody tr.blocked-row td { background:#fef9f9; }
+
+  .avatar {
+    width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1rem; font-weight:800; color:#fff; flex-shrink:0;
+  }
+  .av-admin   { background:var(--blue); }
+  .av-driver  { background:#0891b2; }
+  .av-blocked { background:#94a3b8; }
+
+  .badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:3px 10px; border-radius:99px;
+    font-size:.71rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  }
+  .b-admin    { background:#dbeafe; color:#1e40af; }
+  .b-driver   { background:#ede9fe; color:#5b21b6; }
+  .b-online   { background:#d1fae5; color:#065f46; }
+  .b-offline  { background:#f1f5f9; color:#64748b; }
+  .b-active   { background:#d1fae5; color:#065f46; }
+  .b-blocked  { background:#fee2e2; color:#991b1b; }
+
+  .live-dot {
+    display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:#10b981; animation:blink 1.5s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+  .act-btn {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:5px 10px; border-radius:7px; border:1px solid transparent;
+    font-size:.75rem; font-weight:600; cursor:pointer;
+    text-decoration:none; transition:opacity .15s, transform .15s;
+    white-space:nowrap; background:none;
+  }
+  .act-btn:hover { opacity:.82; transform:translateY(-1px); }
+  .act-edit    { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+  .act-delete  { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
+  .act-unblock { background:#d1fae5; color:#065f46; border-color:#6ee7b7; }
+
+  .actions-wrap { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+
+  .empty-state { text-align:center; padding:40px; color:var(--text-muted); }
+  .empty-state .ei { font-size:2.2rem; margin-bottom:10px; }
+
+  .search-bar {
+    display:flex; align-items:center; gap:8px;
+    background:var(--surface-2); border:1px solid var(--border);
+    border-radius:8px; padding:7px 14px; width:240px;
+  }
+  .search-bar input {
+    border:none; background:transparent; outline:none;
+    font-size:.875rem; color:var(--text-main); width:100%;
+  }
+</style>
+
+
+<!-- Header -->
+<div class="page-header">
+  <div>
+    <div class="page-title">👤 Users</div>
+    <div class="page-sub">Manage all system users — admins and drivers</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <div class="search-bar">
+      🔍 <input type="text" id="user-search" placeholder="Search users..." oninput="filterUsers()">
+    </div>
+    <a href="{% url 'create_user' %}" class="act-btn act-edit" style="padding:8px 16px;font-size:.84rem;">
+      + Add User
+    </a>
+  </div>
+</div>
+
+
+<!-- Stats -->
+<div class="stat-strip">
+  <div class="strip-card">
+    <div class="strip-val">{{ users|length }}</div>
+    <div class="strip-label">Total Users</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-val" style="color:#1E3A8A;">
+      {{ users|length }}
+    </div>
+    <div class="strip-label">Admins + Drivers</div>
+  </div>
+  <div class="strip-card">
+    <div class="strip-val" style="color:#10b981;">{{ online_ids|length }}</div>
+    <div class="strip-label">Online Now</div>
+  </div>
+</div>
+
+
+<!-- Table -->
+<div class="table-card">
+  <div class="table-card-head">
+    <h6>All Users</h6>
+    <span style="font-size:.76rem;color:var(--text-muted);">{{ users|length }} total</span>
+  </div>
+
+  {% if users %}
+  <table id="users-table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Role</th>
+        <th>Phone</th>
+        <th>Account</th>
+        <th>Online</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr class="{% if not u.is_active %}blocked-row{% endif %}" data-name="{{ u.username|lower }} {{ u.get_full_name|lower }}">
+
+        <!-- User -->
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="avatar {% if not u.is_active %}av-blocked{% elif u.role == 'ADMIN' %}av-admin{% else %}av-driver{% endif %}">
+              {{ u.username|first|upper }}
+            </div>
+            <div>
+              <div style="font-weight:700;">{{ u.username }}</div>
+              <div style="font-size:.75rem;color:var(--text-muted);">
+                {{ u.get_full_name|default:"No full name" }}
+              </div>
+            </div>
+          </div>
+        </td>
+
+        <!-- Role -->
+        <td>
+          <span class="badge {% if u.role == 'ADMIN' %}b-admin{% else %}b-driver{% endif %}">
+            {{ u.role }}
+          </span>
+        </td>
+
+        <!-- Phone -->
+        <td style="font-size:.82rem;color:var(--text-muted);">
+          {{ u.phone_number|default:"—" }}
+        </td>
+
+        <!-- Account status -->
+        <td>
+          {% if u.is_active %}
+            <span class="badge b-active">✓ Active</span>
+          {% else %}
+            <span class="badge b-blocked">✕ Blocked</span>
+          {% endif %}
+        </td>
+
+        <!-- Online -->
+        <td>
+          {% if u.id in online_ids %}
+            <span class="badge b-online"><span class="live-dot"></span> Online</span>
+          {% else %}
+            <span class="badge b-offline">Offline</span>
+          {% endif %}
+        </td>
+
+        <!-- Actions -->
+        <td>
+          <div class="actions-wrap">
+            <a href="{% url 'edit_user' u.pk %}" class="act-btn act-edit">✏️ Edit</a>
+
+            {% if u != request.user %}
+              {% if not u.is_active %}
+                <form method="POST" action="{% url 'unblock_user' u.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="act-btn act-unblock">✅ Unblock</button>
+                </form>
+              {% endif %}
+
+              <a href="{% url 'delete_user' u.pk %}" class="act-btn act-delete">🗑 Delete</a>
+            {% else %}
+              <span style="font-size:.74rem;color:var(--text-muted);">— You —</span>
+            {% endif %}
+          </div>
+        </td>
+
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty-state">
+      <div class="ei">👤</div>
+      No users yet. <a href="{% url 'create_user' %}">Add the first one →</a>
+    </div>
+  {% endif %}
+</div>
+
+
+<script>
+  function filterUsers() {
+    const query = document.getElementById('user-search').value.toLowerCase();
+    document.querySelectorAll('#users-table tbody tr').forEach(row => {
+      const name = row.getAttribute('data-name') || '';
+      row.style.display = name.includes(query) ? '' : 'none';
+    });
+  }
+</script>
 
 {% endblock %}

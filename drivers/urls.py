@@ -8,4 +8,5 @@ urlpatterns = [
     path('<int:pk>/performance/', views.driver_performance, name='driver_performance'),
     path('my-vehicle/', views.my_vehicle, name='my_vehicle'),
     path('delete/<int:pk>/', views.driver_delete, name='driver_delete'),
+    
 ]

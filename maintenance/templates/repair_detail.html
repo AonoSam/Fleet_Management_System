@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --radius: 12px; --border: #e2e8f0; --surface: #fff;
+    --surface-2: #f8fafc; --text-main: #0f172a; --text-muted: #64748b;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08); --shadow-md: 0 4px 16px rgba(0,0,0,.09);
+  }
+
+  .rp-wrap { max-width: 980px; }
+
+  /* ── Header ── */
+  .rp-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    color: #fff;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .rp-header::after {
+    content: '';
+    position: absolute; right: -50px; top: -50px;
+    width: 220px; height: 220px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+  }
+  .rp-header-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px;
+    position: relative; z-index: 1;
+  }
+  .rp-plate {
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 8px; padding: 5px 14px;
+    font-weight: 800; letter-spacing: .12em; font-size: .95rem;
+    display: inline-block; margin-bottom: 12px;
+  }
+  .rp-title { font-size: 1.4rem; font-weight: 800; margin: 0; letter-spacing: -.01em; }
+  .rp-sub { opacity: .8; font-size: .86rem; margin-top: 5px; }
+  .rp-status-pill {
+    padding: 7px 18px; border-radius: 99px;
+    font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .rp-status-pending     { background: rgba(245,158,11,.25); color: #fde68a; border: 1px solid rgba(245,158,11,.4); }
+  .rp-status-in_progress { background: rgba(59,130,246,.25); color: #bfdbfe; border: 1px solid rgba(59,130,246,.4); }
+  .rp-status-completed   { background: rgba(16,185,129,.25); color: #a7f3d0; border: 1px solid rgba(16,185,129,.4); }
+  .rp-status-on_hold      { background: rgba(239,68,68,.25); color: #fecaca; border: 1px solid rgba(239,68,68,.4); }
+
+  /* ── Action row ── */
+  .rp-actions { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+
+  /* ── Main grid ── */
+  .rp-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 768px) {
+    .rp-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Cards ── */
+  .rp-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    overflow: hidden; margin-bottom: 20px;
+  }
+  .rp-card-head {
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    display: flex; align-items: center; gap: 8px;
+    font-weight: 700; font-size: .78rem;
+    text-transform: uppercase; letter-spacing: .07em; color: var(--text-main);
+  }
+  .rp-card-body { padding: 20px; }
+
+  /* ── Info rows ── */
+  .rp-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+    font-size: .88rem; gap: 16px;
+  }
+  .rp-row:last-child { border-bottom: none; }
+  .rp-row .k { color: var(--text-muted); font-weight: 500; flex-shrink: 0; }
+  .rp-row .v { font-weight: 600; color: var(--text-main); text-align: right; }
+
+  /* ── Category badge ── */
+  .cat-badge {
+    display: inline-block; padding: 4px 12px; border-radius: 99px;
+    font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  }
+  .bc-engine       { background:#fee2e2; color:#991b1b; }
+  .bc-transmission { background:#fef3c7; color:#92400e; }
+  .bc-brakes       { background:#fde8d8; color:#9a3412; }
+  .bc-tyres        { background:#e0e7ff; color:#3730a3; }
+  .bc-electrical   { background:#fef9c3; color:#713f12; }
+  .bc-body         { background:#dbeafe; color:#1e40af; }
+  .bc-suspension   { background:#ede9fe; color:#5b21b6; }
+  .bc-fuel_system  { background:#d1fae5; color:#065f46; }
+  .bc-cooling      { background:#cffafe; color:#164e63; }
+  .bc-general, .bc-other { background:#f1f5f9; color:#334155; }
+
+  /* ── Description box ── */
+  .rp-issue-box {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 9px; padding: 16px; font-size: .88rem;
+    color: var(--text-main); line-height: 1.7; white-space: pre-wrap;
+  }
+
+  /* ── Cost highlight ── */
+  .rp-cost-box {
+    text-align: center; padding: 22px 16px;
+  }
+  .rp-cost-label {
+    font-size: .76rem; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px;
+  }
+  .rp-cost-value {
+    font-size: 2.1rem; font-weight: 800; color: var(--text-main);
+    letter-spacing: -.03em;
+  }
+  .rp-cost-currency { font-size: 1.1rem; color: var(--text-muted); font-weight: 600; margin-right: 4px; }
+
+  /* ── Progress tracker ── */
+  .rp-progress-steps { display: flex; align-items: center; margin: 8px 0 4px; }
+  .rp-step {
+    flex: 1; text-align: center; position: relative;
+  }
+  .rp-step-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--surface-2); border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 6px; font-size: .8rem; font-weight: 700;
+    color: var(--text-muted); position: relative; z-index: 1;
+  }
+  .rp-step.is-active .rp-step-dot,
+  .rp-step.is-done .rp-step-dot {
+    background: var(--blue-mid, #2563eb); border-color: var(--blue-mid, #2563eb); color: #fff;
+  }
+  .rp-step.is-done .rp-step-dot { background: #10b981; border-color: #10b981; }
+  .rp-step-label {
+    font-size: .68rem; color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: .04em; font-weight: 600;
+  }
+  .rp-step.is-active .rp-step-label,
+  .rp-step.is-done .rp-step-label { color: var(--text-main); }
+  .rp-step-line {
+    position: absolute; top: 14px; left: -50%; width: 100%;
+    height: 2px; background: var(--border); z-index: 0;
+  }
+  .rp-step:first-child .rp-step-line { display: none; }
+  .rp-step.is-done .rp-step-line,
+  .rp-step.is-active .rp-step-line { background: #10b981; }
+
+  .rp-update-btn { margin-top: 18px; }
+
+  /* ── Timeline mini cards ── */
+  .rp-meta-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: .85rem;
+  }
+  .rp-meta-item:last-child { border-bottom: none; }
+  .rp-meta-icon { font-size: 1rem; width: 22px; text-align: center; flex-shrink: 0; }
+  .rp-meta-text .k { color: var(--text-muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+  .rp-meta-text .v { font-weight: 600; color: var(--text-main); margin-top: 1px; }
+</style>
+
+
+<div class="rp-wrap">
+
+  <!-- HEADER -->
+  <div class="rp-header">
+    <div class="rp-header-top">
+      <div>
+        <div class="rp-plate">{{ repair.vehicle.number_plate }}</div>
+        <div class="rp-title">{{ repair.get_category_display }} Repair</div>
+        <div class="rp-sub">{{ repair.vehicle.make|default:"" }} {{ repair.vehicle.model }} &nbsp;·&nbsp; Logged {{ repair.created_at|date:"M d, Y" }}</div>
+      </div>
+      <span class="rp-status-pill rp-status-{{ repair.progress|lower }}">
+        {{ repair.get_progress_display }}
+      </span>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="rp-actions">
+    <a href="{% url 'repair_logs' %}" class="btn btn-secondary btn-sm">← All Repairs</a>
+    <a href="{% url 'edit_repair' repair.pk %}" class="btn btn-warning btn-sm">✏️ Edit</a>
+    <a href="{% url 'delete_repair' repair.pk %}" class="btn btn-danger btn-sm">🗑 Delete</a>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="rp-grid">
+
+    <!-- LEFT COLUMN -->
+    <div>
+
+      <!-- Repair Details -->
+      <div class="rp-card">
+        <div class="rp-card-head">📋 Repair Details</div>
+        <div class="rp-card-body">
+          <div class="rp-row">
+            <span class="k">Vehicle</span>
+            <span class="v">{{ repair.vehicle.number_plate }} — {{ repair.vehicle.model }}</span>
+          </div>
+          <div class="rp-row">
+            <span class="k">Category</span>
+            <span class="v"><span class="cat-badge bc-{{ repair.category|lower }}">{{ repair.get_category_display }}</span></span>
+          </div>
+          <div class="rp-row">
+            <span class="k">Mechanic</span>
+            <span class="v">{{ repair.mechanic|default:"Not assigned" }}</span>
+          </div>
+          <div class="rp-row">
+            <span class="k">Repair Date</span>
+            <span class="v">{{ repair.repaired_on|date:"M d, Y"|default:"Not set" }}</span>
+          </div>
+          <div class="rp-row">
+            <span class="k">Logged On</span>
+            <span class="v">{{ repair.created_at|date:"M d, Y · H:i" }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="rp-card">
+        <div class="rp-card-head">📝 Description / Issue</div>
+        <div class="rp-card-body">
+          <div class="rp-issue-box">{{ repair.issue }}</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div>
+
+      <!-- Cost -->
+      <div class="rp-card">
+        <div class="rp-card-head">💰 Cost</div>
+        <div class="rp-card-body">
+          <div class="rp-cost-box">
+            <div class="rp-cost-label">Total Repair Cost</div>
+            <div class="rp-cost-value"><span class="rp-cost-currency">KES</span>{{ repair.cost|floatformat:2 }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress tracker -->
+      <div class="rp-card">
+        <div class="rp-card-head">📊 Progress</div>
+        <div class="rp-card-body">
+
+          <div class="rp-progress-steps">
+            <div class="rp-step {% if repair.progress == 'PENDING' %}is-active{% elif repair.progress != 'PENDING' %}is-done{% endif %}">
+              <div class="rp-step-line"></div>
+              <div class="rp-step-dot">1</div>
+              <div class="rp-step-label">Pending</div>
+            </div>
+            <div class="rp-step {% if repair.progress == 'IN_PROGRESS' %}is-active{% elif repair.progress == 'COMPLETED' %}is-done{% endif %}">
+              <div class="rp-step-line"></div>
+              <div class="rp-step-dot">2</div>
+              <div class="rp-step-label">In Progress</div>
+            </div>
+            <div class="rp-step {% if repair.progress == 'COMPLETED' %}is-done{% endif %}">
+              <div class="rp-step-line"></div>
+              <div class="rp-step-dot">✓</div>
+              <div class="rp-step-label">Completed</div>
+            </div>
+          </div>
+
+          {% if repair.progress == 'ON_HOLD' %}
+          <div class="alert alert-danger mt-3" style="margin-bottom:0;">
+            ⚠️ This repair is currently <strong>on hold</strong>.
+          </div>
+          {% endif %}
+
+          <a href="{% url 'edit_repair' repair.pk %}" class="btn btn-primary btn-sm w-100 rp-update-btn">
+            Update Progress
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}

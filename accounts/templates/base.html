@@ -2,197 +2,264 @@
 <html lang="en">
 {% load static %}
 <head>
-    <meta charset="UTF-8">
-    <title>Fleet Management System</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- <link rel="stylesheet" href="{% static 'css/style.css' %}"> -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tronilla Fleet Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 
 <body>
 
-<div class="d-flex">
+<!-- Mobile dark overlay behind sidebar -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
-    <!-- 🔵 SIDEBAR -->
-    <div class="bg-dark text-white p-3" style="width: 250px; min-height: 100vh;">
+<div class="layout-wrap">
 
-        <h4 class="text-center mb-3">FMS</h4>
-        <hr>
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar" id="sidebar">
 
-        <ul class="nav flex-column">
+    <button class="sidebar-close" id="sidebar-close-btn" onclick="closeSidebar()">✕</button>
 
-            {% if request.user.is_authenticated %}
-
-                <!-- DASHBOARD -->
-                <li class="nav-item mb-2">
-                    {% if request.user.role == 'ADMIN' %}
-                        <a class="nav-link text-white" href="{% url 'dashboard' %}">Dashboard</a>
-                    {% else %}
-                        <a class="nav-link text-white" href="{% url 'driver_dashboard' %}">Dashboard</a>
-                    {% endif %}
-                </li>
-
-                <!-- ADMIN MENU -->
-                {% if request.user.role == 'ADMIN' %}
-
-                    <li class="mt-2 text-secondary small">Management</li>
-
-                    <li><a class="nav-link text-white" href="{% url 'user_list' %}">Users</a></li>
-                    <li><a class="nav-link text-white" href="{% url 'vehicle_list' %}">Vehicles</a></li>
-                    <li><a class="nav-link text-white" href="{% url 'driver_list' %}">Drivers</a></li>
-                    <li><a class="nav-link text-white" href="{% url 'admin_payment_list' %}">Payments</a></li>
-                    <li><a class="nav-link text-white" href="{% url 'schedule_list' %}">Maintenance</a></li>
-
-                    <li class="mt-3 text-secondary small">Finance</li>
-                    <li><a class="nav-link text-white" href="{% url 'loan_list' %}">Loans</a></li>
-
-                    <li class="mt-3 text-secondary small">Reports</li>
-                    <li><a class="nav-link text-white" href="{% url 'dashboard' %}">Finance Dashboard</a></li>
-                    <li><a class="nav-link text-white" href="{% url 'cost_report' %}">Cost Report</a></li>
-                    <li><a class="nav-link text-white" href="{% url 'performance_report' %}">Performance</a></li>
-
-                {% endif %}
-
-                <!-- DRIVER MENU -->
-                {% if request.user.role == 'DRIVER' %}
-
-                    <li class="mt-2 text-secondary small">Driver Panel</li>
-
-                    <li><a class="nav-link text-white" href="{% url 'my_vehicle' %}">My Vehicle</a></li>
-                    <li><a class="nav-link text-white" href="{% url 'payment_list' %}">My Payments</a></li>
-                    <li><a class="nav-link text-white" href="{% url 'my_maintenance' %}">Maintenance</a></li>
-                    <li><a class="nav-link text-white" href="{% url 'my_loans' %}">My Loans</a></li>
-
-                {% endif %}
-
-            {% endif %}
-
-        </ul>
+    <div class="sidebar-brand">
+      <div class="brand-icon">🚛</div>
+      <div class="brand-name">Tronilla <span>Fleet</span></div>
     </div>
 
-    <!-- 🔵 MAIN CONTENT -->
-    <div class="flex-grow-1">
+    <nav class="sidebar-nav" onclick="handleNavClick(event)">
 
-        <!-- 🔷 NAVBAR -->
-        <nav class="navbar navbar-light bg-light px-4 border-bottom">
+      {% if request.user.is_authenticated %}
 
-            <div class="d-flex justify-content-between w-100">
+        <a href="{% if request.user.role == 'ADMIN' %}{% url 'admin_dashboard' %}{% else %}{% url 'driver_dashboard' %}{% endif %}">
+          🏠 Dashboard
+        </a>
 
-                <span class="navbar-brand mb-0 h5">
-                    Fleet Management System
-                </span>
+        {% if request.user.role == 'ADMIN' %}
+          <div class="sidebar-section-label">Management</div>
+          <a href="{% url 'user_list' %}">👤 Users</a>
+          <a href="{% url 'active_users' %}">👥 Active Users</a>
+          <a href="{% url 'vehicle_list' %}">🚗 Vehicles</a>
+          <a href="{% url 'driver_list' %}">👨‍✈️ Drivers</a>
+          <a href="{% url 'admin_payment_list' %}">💳 Payments</a>
+          <a href="{% url 'schedule_list' %}">📅 Maintenance</a>
+          <a href="{% url 'maintenance_plans' %}">📅 Maintenance Plans</a>
+          <a href="{% url 'repair_logs' %}">🔧 Repair Logs</a>
+          
 
-                <div class="d-flex align-items-center">
+          <div class="sidebar-section-label">Finance</div>
+          <a href="{% url 'loan_list' %}">🏦 Loans</a>
 
-                    {% if request.user.is_authenticated %}
+          <div class="sidebar-section-label">Reports</div>
+          <a href="{% url 'dashboard' %}">📊 Finance Dashboard</a>
+          <a href="{% url 'cost_report' %}">💰 Cost Report</a>
+          <a href="{% url 'performance_report' %}">⭐ Performance</a>
+        {% endif %}
 
-                        <!-- 🔔 NOTIFICATIONS (SAFE VERSION) -->
-                        <div class="dropdown me-3">
+        {% if request.user.role == 'DRIVER' %}
+          <div class="sidebar-section-label">Driver Panel</div>
+          <a href="{% url 'my_vehicle' %}">🚗 My Vehicle</a>
+          <a href="{% url 'payment_list' %}">💳 My Payments</a>
+          <a href="{% url 'my_maintenance' %}">🔧 Maintenance</a>
+          <a href="{% url 'my_loans' %}">🏦 My Loans</a>
+        {% endif %}
 
-                            <a class="btn btn-light position-relative dropdown-toggle"
-                               href="#"
-                               role="button"
-                               data-bs-toggle="dropdown">
+        <div class="sidebar-section-label">Account</div>
+        <a href="{% url 'logout' %}" style="color:#fca5a5;">🚪 Logout</a>
 
-                                🔔
+      {% endif %}
 
-                                {% if unread_count|default:0 > 0 %}
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        {{ unread_count }}
-                                    </span>
-                                {% endif %}
+    </nav>
+  </aside>
 
-                            </a>
+  <!-- ══ MAIN ══ -->
+  <div class="main-wrap">
 
-                            <ul class="dropdown-menu dropdown-menu-end p-2" style="width: 320px;">
+    <header class="topbar">
 
-                                <!-- CLEAR ALL -->
-                                <li class="mb-2 text-end">
-                                    <form method="POST" action="{% url 'mark_all_read' %}">
-                                        {% csrf_token %}
-                                        <button class="btn btn-sm btn-outline-danger">
-                                            Clear All
-                                        </button>
-                                    </form>
-                                </li>
+      <!-- Hamburger — only visible on mobile via CSS -->
+      <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
 
-                                <hr>
+      <div class="topbar-title">Tronilla Fleet Management Saccoh</div>
 
-                                {% if notifications %}
-                                    {% for n in notifications|slice:":5" %}
-                                        <li class="mb-2">
+      <div class="topbar-right">
+        {% if request.user.is_authenticated %}
 
-                                            <div style="{% if not n.is_read %}font-weight:600;{% endif %}">
-                                                <small>{{ n.message }}</small>
-                                            </div>
+          <div style="position:relative;">
+            <button class="notif-btn" id="notif-toggle">
+              🔔
+              {% if unread_count|default:0 > 0 %}
+                <span class="notif-badge" id="notif-badge">{{ unread_count }}</span>
+              {% endif %}
+            </button>
 
-                                            <span class="text-muted" style="font-size:11px;">
-                                                {{ n.created_at|date:"M d, H:i" }}
-                                            </span>
+            <div class="notif-dropdown" id="notif-dropdown">
+              <div class="notif-dropdown-head">
+                <span>Notifications</span>
+                <button class="btn btn-sm btn-outline-danger" onclick="clearAllNotifications(event)">
+                  Clear All
+                </button>
+              </div>
 
-                                            {% if not n.is_read %}
-                                            <form method="POST" action="{% url 'mark_read' n.id %}">
-                                                {% csrf_token %}
-                                                <button class="btn btn-sm btn-link p-0">
-                                                    mark as read
-                                                </button>
-                                            </form>
-                                            {% endif %}
-
-                                            <hr>
-                                        </li>
-                                    {% endfor %}
-                                {% else %}
-                                    <li class="text-center p-2 text-muted">No notifications</li>
-                                {% endif %}
-
-                                <li class="text-center">
-                                    <a href="{% url 'alerts' %}" class="btn btn-sm btn-primary">
-                                        View All
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </div>
-
-                        <!-- USER INFO -->
-                        <span class="me-3">
-                            {{ request.user.username }} ({{ request.user.role }})
-                        </span>
-
-                        <a href="{% url 'logout' %}" class="btn btn-danger btn-sm">
-                            Logout
-                        </a>
-
-                    {% endif %}
-
-                </div>
-
-            </div>
-        </nav>
-
-        <!-- 🔶 MESSAGES -->
-        <div class="container mt-3">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              <div id="notif-list">
+                {% if notifications %}
+                  {% for n in notifications|slice:":5" %}
+                    <div class="notif-item {% if not n.is_read %}unread{% endif %}" id="notif-{{ n.id }}">
+                      <div>{{ n.message }}</div>
+                      <div class="notif-time">{{ n.created_at|date:"M d, H:i" }}</div>
                     </div>
-                {% endfor %}
-            {% endif %}
-        </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="notif-item" style="text-align:center;color:var(--text-muted);">
+                    No notifications
+                  </div>
+                {% endif %}
+              </div>
 
-        <!-- 🔶 PAGE CONTENT -->
-        <div class="container mt-4">
-            {% block content %}{% endblock %}
-        </div>
+              <div class="notif-footer">
+                <a href="{% url 'alerts' %}" class="btn btn-primary btn-sm">View All</a>
+              </div>
+            </div>
+          </div>
 
+          <span class="topbar-user">{{ request.user.username }} ({{ request.user.role }})</span>
+          <a href="{% url 'logout' %}" class="btn btn-danger btn-sm d-md-inline-flex">Logout</a>
+
+        {% endif %}
+      </div>
+    </header>
+
+    {% if messages %}
+    <div style="padding: 14px 16px 0;">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+          {{ message }}
+          <button type="button" class="btn-close" onclick="this.parentElement.remove()">✕</button>
+        </div>
+      {% endfor %}
     </div>
+    {% endif %}
+
+    <div class="page-content">
+      {% block content %}{% endblock %}
+    </div>
+
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- <script src="{% static 'js/main.js' %}"></script> -->
+<script>
+  // ══ SIDEBAR TOGGLE (MOBILE) ══
+  var sidebarEl    = document.getElementById('sidebar');
+  var overlayEl    = document.getElementById('sidebar-overlay');
+  var hamburgerEl  = document.getElementById('hamburger-btn');
+
+  function toggleSidebar() {
+    if (sidebarEl.classList.contains('open')) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  }
+
+  function openSidebar() {
+    sidebarEl.classList.add('open');
+    overlayEl.classList.add('active');
+    hamburgerEl.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    sidebarEl.classList.remove('open');
+    overlayEl.classList.remove('active');
+    hamburgerEl.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function handleNavClick(e) {
+    if (e.target.tagName === 'A' && window.innerWidth <= 768) {
+      closeSidebar();
+    }
+  }
+
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 768) closeSidebar();
+  });
+
+  // Highlight current page link
+  (function () {
+    var current = window.location.pathname;
+    document.querySelectorAll('.sidebar-nav a').forEach(function (link) {
+      if (link.getAttribute('href') === current) {
+        link.classList.add('active');
+      }
+    });
+  })();
+
+  // ══ NOTIFICATIONS DROPDOWN ══
+  var notifToggle   = document.getElementById('notif-toggle');
+  var notifDropdown = document.getElementById('notif-dropdown');
+
+  if (notifToggle) {
+    notifToggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      notifDropdown.classList.toggle('open');
+    });
+    document.addEventListener('click', function () {
+      notifDropdown.classList.remove('open');
+    });
+    notifDropdown.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+
+  function getCookie(name) {
+    var val = null;
+    if (document.cookie) {
+      document.cookie.split(';').forEach(function (c) {
+        c = c.trim();
+        if (c.startsWith(name + '='))
+          val = decodeURIComponent(c.substring(name.length + 1));
+      });
+    }
+    return val;
+  }
+
+  function clearAllNotifications(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    fetch("{% url 'mark_all_read' %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken'),
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.status === 'ok') {
+        document.getElementById('notif-list').innerHTML =
+          '<div class="notif-item" style="text-align:center;color:var(--text-muted);">No notifications</div>';
+        var badge = document.getElementById('notif-badge');
+        if (badge) badge.style.display = 'none';
+      }
+    });
+  }
+
+  // ══ AUTO LOGOUT AFTER 5 MIN INACTIVITY ══
+  var inactivityTimer;
+  function resetTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(function () {
+      window.location.href = "{% url 'logout' %}";
+    }, 300000);
+  }
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (e) {
+    document.addEventListener(e, resetTimer);
+  });
+  resetTimer();
+</script>
 
 </body>
 </html>

@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+  :root {
+    --radius: 12px; --border: #e2e8f0; --surface: #fff;
+    --surface-2: #f8fafc; --text-main: #0f172a; --text-muted: #64748b;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .form-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    max-width: 760px; margin: 0 auto; overflow: hidden;
+  }
+  .form-card-head {
+    padding: 18px 28px; border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .form-card-head h5 { font-weight: 800; font-size: 1rem; margin: 0; color: var(--text-main); }
+  .form-card-body { padding: 28px; }
+
+  .field-group { margin-bottom: 20px; }
+  .field-group label {
+    display: block; font-size: .8rem; font-weight: 700;
+    color: var(--text-main); margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: .05em;
+  }
+  .field-group input,
+  .field-group select,
+  .field-group textarea {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 9px;
+    padding: 10px 14px; font-size: .9rem; color: var(--text-main);
+    background: var(--surface); transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  .field-group input:focus,
+  .field-group select:focus,
+  .field-group textarea:focus {
+    border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+  }
+  .field-group textarea { resize: vertical; min-height: 90px; }
+  .field-hint { font-size: .76rem; color: var(--text-muted); margin-top: 4px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 20px; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .progress-selector { display: flex; gap: 10px; flex-wrap: wrap; }
+  .progress-option { display: none; }
+  .progress-option + label {
+    padding: 8px 16px; border-radius: 99px; border: 1.5px solid var(--border);
+    font-size: .82rem; font-weight: 600; cursor: pointer;
+    transition: all .15s; color: var(--text-muted); background: var(--surface-2);
+  }
+  .progress-option:checked + label { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+
+  .form-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+    padding: 18px 28px; border-top: 1px solid var(--border); background: var(--surface-2);
+  }
+</style>
+
+
+<div class="form-card">
+  <div class="form-card-head">
+    <h5>{% if repair %}✏️ Edit Repair Log{% else %}🔧 New Repair Log{% endif %}</h5>
+    <a href="{% url 'repair_logs' %}" class="btn btn-sm btn-outline-secondary">← Back</a>
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    <div class="form-card-body">
+
+      <div class="form-grid">
+
+        <!-- Vehicle -->
+        <div class="field-group">
+          <label>Vehicle *</label>
+          <select name="vehicle" required>
+            <option value="">— Select vehicle —</option>
+            {% for v in vehicles %}
+              <option value="{{ v.id }}"
+                {% if repair and repair.vehicle_id == v.id %}selected{% endif %}>
+                {{ v.number_plate }} — {{ v.model }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Category -->
+        <div class="field-group">
+          <label>Category *</label>
+          <select name="category" required>
+            {% for val, label in category_choices %}
+              <option value="{{ val }}"
+                {% if repair and repair.category == val %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Mechanic -->
+        <div class="field-group">
+          <label>Mechanic</label>
+          <input type="text" name="mechanic" placeholder="e.g. John Kamau"
+            value="{% if repair %}{{ repair.mechanic|default:'' }}{% endif %}">
+          <div class="field-hint">Full name of mechanic handling the repair</div>
+        </div>
+
+        <!-- Cost -->
+        <div class="field-group">
+          <label>Cost (KES)</label>
+          <input type="number" name="cost" step="0.01" min="0" placeholder="0.00"
+            value="{% if repair %}{{ repair.cost }}{% endif %}">
+        </div>
+
+        <!-- Date -->
+        <div class="field-group">
+          <label>Repair Date</label>
+          <input type="date" name="repaired_on"
+            value="{% if repair and repair.repaired_on %}{{ repair.repaired_on|date:'Y-m-d' }}{% endif %}">
+          <div class="field-hint">Leave blank if not yet completed</div>
+        </div>
+
+      </div>
+
+      <!-- Description — full width -->
+      <div class="field-group">
+        <label>Description / Issue *</label>
+        <textarea name="issue" required
+          placeholder="Describe the issue or repair work in detail...">{% if repair %}{{ repair.issue }}{% endif %}</textarea>
+      </div>
+
+      <!-- Progress -->
+      <div class="field-group">
+        <label>Progress</label>
+        <div class="progress-selector">
+          {% for val, label in progress_choices %}
+          <input class="progress-option" type="radio" name="progress"
+            id="prog_{{ val }}" value="{{ val }}"
+            {% if repair and repair.progress == val %}checked
+            {% elif not repair and val == 'PENDING' %}checked{% endif %}>
+          <label for="prog_{{ val }}">{{ label }}</label>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="form-actions">
+      <a href="{% url 'repair_logs' %}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+      <button type="submit" class="btn btn-primary btn-sm">
+        {% if repair %}Save Changes{% else %}Add Repair Log{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
