@@ -21,15 +21,15 @@ def get_dashboard_stats():
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     # ✅ ONLY VALID DRIVER LOANS
-<<<<<<< HEAD
+
     driver_loans = Loan.objects.filter(
         loan_type='DRIVER',
         status__in=['ACTIVE', 'PAID']
     )
 
-=======
+
     driver_loans = valid_loans.filter(loan_type='DRIVER')
->>>>>>> c0367f47e91f1327e1733b6b75897017ca7fc7bb
+
     driver_interest_income = sum(
         loan.interest_income() for loan in driver_loans
     )
@@ -43,15 +43,15 @@ def get_dashboard_stats():
     )['total'] or 0
 
     # ✅ ONLY VALID BANK LOANS
-<<<<<<< HEAD
+
     bank_loans = Loan.objects.filter(
         loan_type='BANK',
         status__in=['ACTIVE', 'PAID']
     )
 
-=======
+
     bank_loans = valid_loans.filter(loan_type='BANK')
->>>>>>> c0367f47e91f1327e1733b6b75897017ca7fc7bb
+
     bank_interest_expense = sum(
         loan.interest_expense() for loan in bank_loans
     )
@@ -59,20 +59,20 @@ def get_dashboard_stats():
     total_expenses = maintenance_expenses + bank_interest_expense
 
 
-<<<<<<< HEAD
+
     # ---------------- LOAN KPI (FIXED) ----------------
     valid_loans = Loan.objects.filter(
         status__in=['ACTIVE', 'PAID']
     )
 
-=======
+
     # ---------------- LOAN KPI ----------------
->>>>>>> c0367f47e91f1327e1733b6b75897017ca7fc7bb
+
     total_loan_amount = valid_loans.aggregate(
         total=Sum('amount')
     )['total'] or 0
 
-<<<<<<< HEAD
+
     active_loans = Loan.objects.filter(status='ACTIVE').count()
 
     # 🔥 FIX: pending should NOT include rejected
@@ -81,11 +81,11 @@ def get_dashboard_stats():
     ).count()
 
     paid_loans = Loan.objects.filter(status='PAID').count()
-=======
+
     active_loans = valid_loans.filter(status='ACTIVE').count()
     pending_loans = valid_loans.filter(status='PENDING').count()
     paid_loans = valid_loans.filter(status='PAID').count()
->>>>>>> c0367f47e91f1327e1733b6b75897017ca7fc7bb
+
 
 
     # ---------------- FINAL PROFIT ----------------
@@ -127,7 +127,7 @@ def get_driver_performance_report():
     for d in drivers:
 
         payments = Payment.objects.filter(driver=d, status='SUCCESS')
-<<<<<<< HEAD
+
 
         # ✅ ONLY VALID LOANS
         loans = Loan.objects.filter(
@@ -135,9 +135,8 @@ def get_driver_performance_report():
             loan_type='DRIVER',
             status__in=['ACTIVE', 'PAID']
         )
-=======
+
         loans = Loan.objects.filter(driver=d, loan_type='DRIVER').exclude(status='REJECTED')
->>>>>>> c0367f47e91f1327e1733b6b75897017ca7fc7bb
 
         income = payments.aggregate(total=Sum('amount'))['total'] or 0
         loan_amount = loans.aggregate(total=Sum('amount'))['total'] or 0
