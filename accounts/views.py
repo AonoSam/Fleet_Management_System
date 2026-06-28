@@ -60,6 +60,7 @@ def login_view(request):
         })
 
     return render(request, "login.html")
+
 def logout_view(request):
     # ✅ FIX: Mark UserSession as inactive BEFORE logout clears the user
     if request.user.is_authenticated:
