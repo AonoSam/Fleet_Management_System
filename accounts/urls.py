@@ -6,10 +6,6 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
 
-    path('login/',   views.login_view,  name='login'),
-    path('logout/',  views.logout_view, name='logout'),
-
-
     # User management
     path('users/',                views.user_list,       name='user_list'),
     path('create-user/',          views.create_user_view, name='create_user'),

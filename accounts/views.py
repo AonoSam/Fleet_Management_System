@@ -33,21 +33,31 @@ def landing(request):
 # AUTH
 # ========================
 from django.contrib.auth import authenticate, login, get_user_model
-from django.http import HttpResponse
-from django.contrib.auth import authenticate
+
+
 
 def login_view(request):
     if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
         user = authenticate(
             request,
-            username=request.POST.get("username"),
-            password=request.POST.get("password"),
+            username=username,
+            password=password
         )
 
-        if user:
-            return HttpResponse("AUTHENTICATED")
+        if user is not None:
+            login(request, user)
 
-        return HttpResponse("NOT AUTHENTICATED")
+            if user.role == "ADMIN":
+                return redirect("admin_dashboard")
+
+            return redirect("driver_dashboard")
+
+        return render(request, "login.html", {
+            "error": "Invalid credentials"
+        })
 
     return render(request, "login.html")
 def logout_view(request):

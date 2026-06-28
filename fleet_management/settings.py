@@ -25,7 +25,11 @@ SECRET_KEY = os.getenv(
 # False on Vercel / production
 DEBUG = os.getenv("VERCEL") is None
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    ".vercel.app",
+    "localhost",
+    "127.0.0.1",
+]
 
 
 
