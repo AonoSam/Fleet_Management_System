@@ -37,29 +37,17 @@ from django.contrib.auth import authenticate, login, get_user_model
 
 
 def login_view(request):
-    if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-
-        user = authenticate(
-            request,
-            username=username,
-            password=password
-        )
-
-        if user is not None:
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user:
             login(request, user)
-
-            if user.role == "ADMIN":
-                return redirect("admin_dashboard")
-
-            return redirect("driver_dashboard")
-
-        return render(request, "login.html", {
-            "error": "Invalid credentials"
-        })
-
-    return render(request, "login.html")
+            if user.role == 'ADMIN':
+                return redirect('admin_dashboard')
+            return redirect('driver_dashboard')
+        return render(request, 'login.html', {'error': 'Invalid credentials'})
+    return render(request, 'login.html')
 
 def logout_view(request):
     # ✅ FIX: Mark UserSession as inactive BEFORE logout clears the user
