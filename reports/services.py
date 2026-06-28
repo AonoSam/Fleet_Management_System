@@ -15,8 +15,12 @@ def get_dashboard_stats():
         status='SUCCESS'
     ).aggregate(total=Sum('amount'))['total'] or 0
 
-    # ✅ CORRECT: calculate realized interest (loop through loans)
-    driver_loans = Loan.objects.filter(loan_type='DRIVER')
+    # ✅ ONLY VALID DRIVER LOANS
+    driver_loans = Loan.objects.filter(
+        loan_type='DRIVER',
+        status__in=['ACTIVE', 'PAID']
+    )
+
     driver_interest_income = sum(
         loan.interest_income() for loan in driver_loans
     )
@@ -29,8 +33,12 @@ def get_dashboard_stats():
         total=Sum('cost')
     )['total'] or 0
 
-    # ✅ CORRECT: bank interest expense (realized only)
-    bank_loans = Loan.objects.filter(loan_type='BANK')
+    # ✅ ONLY VALID BANK LOANS
+    bank_loans = Loan.objects.filter(
+        loan_type='BANK',
+        status__in=['ACTIVE', 'PAID']
+    )
+
     bank_interest_expense = sum(
         loan.interest_expense() for loan in bank_loans
     )
@@ -38,13 +46,22 @@ def get_dashboard_stats():
     total_expenses = maintenance_expenses + bank_interest_expense
 
 
-    # ---------------- LOAN KPI (NO PROFIT IMPACT) ----------------
-    total_loan_amount = Loan.objects.aggregate(
+    # ---------------- LOAN KPI (FIXED) ----------------
+    valid_loans = Loan.objects.filter(
+        status__in=['ACTIVE', 'PAID']
+    )
+
+    total_loan_amount = valid_loans.aggregate(
         total=Sum('amount')
     )['total'] or 0
 
     active_loans = Loan.objects.filter(status='ACTIVE').count()
-    pending_loans = Loan.objects.filter(status='PENDING').count()
+
+    # 🔥 FIX: pending should NOT include rejected
+    pending_loans = Loan.objects.filter(
+        status__in=['PENDING', 'REQUESTED']
+    ).count()
+
     paid_loans = Loan.objects.filter(status='PAID').count()
 
 
@@ -77,7 +94,7 @@ def get_cost_report():
 
 
 # ----------------------
-# DRIVER PERFORMANCE REPORT (FINANCE-ALIGNED)
+# DRIVER PERFORMANCE REPORT (FIXED)
 # ----------------------
 def get_driver_performance_report():
 
@@ -88,13 +105,19 @@ def get_driver_performance_report():
     for d in drivers:
 
         payments = Payment.objects.filter(driver=d, status='SUCCESS')
-        loans = Loan.objects.filter(driver=d, loan_type='DRIVER')
+
+        # ✅ ONLY VALID LOANS
+        loans = Loan.objects.filter(
+            driver=d,
+            loan_type='DRIVER',
+            status__in=['ACTIVE', 'PAID']
+        )
 
         income = payments.aggregate(total=Sum('amount'))['total'] or 0
         loan_amount = loans.aggregate(total=Sum('amount'))['total'] or 0
         trips = payments.count()
 
-        # ✅ Balanced + realistic scoring
+        # ✅ Balanced scoring
         score = (float(income) * 0.7) - (float(loan_amount) * 0.2) + (trips * 10)
 
         report.append({
