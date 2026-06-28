@@ -1,8 +1,12 @@
 """
 Django settings for fleet_management project.
 """
+from dotenv import load_dotenv
 import os
 
+load_dotenv()
+
+import dj_database_url
 
 from pathlib import Path
 
@@ -52,6 +56,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -82,10 +87,10 @@ WSGI_APPLICATION = 'fleet_management.wsgi.application'
 
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600
+    )
 }
 
 
@@ -104,13 +109,32 @@ TIME_ZONE = 'Africa/Nairobi'   # ✅ FIXED (important for real system)
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
 
+# ================================
+# STATIC FILES
+# ================================
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+STATICFILES_STORAGE = (
+    'whitenoise.storage.CompressedManifestStaticFilesStorage'
+)
+
+
+# ================================
+# MEDIA FILES
+# ================================
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
+
 
 AUTH_USER_MODEL = 'accounts.User'
 
