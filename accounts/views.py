@@ -36,6 +36,10 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+        from django.contrib.auth import get_user_model
+
+        print("DATABASE USER COUNT:", get_user_model().objects.count())
+        print("USERNAME EXISTS:", get_user_model().objects.filter(username=username).exists())
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
