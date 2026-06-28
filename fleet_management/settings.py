@@ -150,3 +150,25 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SESSION_COOKIE_AGE = 300              # 5 minutes in seconds
 SESSION_SAVE_EVERY_REQUEST = True     # reset timer on every request
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # also logout when browser closes
+
+
+
+# ================================
+# SECURITY HEADERS (PRODUCTION)
+# ================================
+if not DEBUG:
+
+    SECURE_BROWSER_XSS_FILTER = True
+
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+    X_FRAME_OPTIONS = 'DENY'
+
+    SECURE_PROXY_SSL_HEADER = (
+        'HTTP_X_FORWARDED_PROTO',
+        'https'
+    )
+
+    SESSION_COOKIE_SECURE = True
+
+    CSRF_COOKIE_SECURE = True
