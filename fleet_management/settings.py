@@ -99,19 +99,6 @@ AUTH_USER_MODEL = 'accounts.User'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ==============================
-# 🔥 MPESA DARAJA CONFIG (PRODUCTION READY)
-# ==============================
-
-MPESA_ENVIRONMENT = "sandbox"  # change to "production" when live
-
-MPESA_CONSUMER_KEY = "G2HU6Sfcnq160p8D5tYPp8LrVAdgftqJ6gipBC5lHh7d4Eyo"
-MPESA_CONSUMER_SECRET = "rZDsUn1GcnoDFJbVoZKfFmR075S9ZBZAV0HJzfgaGNBBwcsehTcCfhirsBJwLwFm"
-
-# 🔥 IMPORTANT: Use correct shortcode per environment
-MPESA_SHORTCODE = "174379"  # sandbox test shortcode
-MPESA_PASSKEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
-
-# ==============================
 # 🔥 CALLBACK CONFIGURATION
 # ==============================
 
